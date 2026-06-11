@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HUB DE CAPTAÇÃO | Terminal de Inteligência</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --green:      #00FF41;
+  --green2:     #00CC33;
+  --green3:     #009922;
+  --green-dim:  #006614;
+  --green-dark: #001a00;
+  --amber:      #FFB300;
+  --red:        #FF4444;
+  --bg:         #000000;
+  --bg2:        #050f05;
+  --bg3:        #0a1a0a;
+  --border:     #003300;
+  --font:       'Menlo','Monaco','Consolas','Courier New',monospace;
+}
+html, body { height: 100%; background: var(--bg); color: var(--green); font-family: var(--font); font-size: 13px; overflow: hidden; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 3px; }
+#root { display: flex; flex-direction: column; height: 100vh; }
+#header { flex-shrink: 0; border-bottom: 1px solid var(--border); padding: 6px 12px; background: var(--bg2); }
+#ticker { flex-shrink: 0; border-bottom: 1px solid var(--border); height: 26px; overflow: hidden; background: var(--green-dark); }
+#main { flex: 1; display: flex; min-height: 0; }
+#sidebar { flex-shrink: 0; width: 160px; border-right: 1px solid var(--border); background: var(--bg2); padding: 8px 0; overflow-y: auto; }
+#content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#statusbar { flex-shrink: 0; border-top: 1px solid var(--border); padding: 3px 12px; background: var(--bg2); font-size: 11px; color: var(--green3); }
+.hdr-top { display: flex; justify-content: space-between; align-items: center; }
+.hdr-title { font-size: 15px; font-weight: bold; letter-spacing: 2px; color: var(--green); text-shadow: 0 0 8px var(--green); }
+.hdr-stats { display: flex; gap: 18px; font-size: 11px; color: var(--green3); }
+.hdr-stat span { color: var(--green); font-weight: bold; }
+#ticker-inner { display: inline-block; white-space: nowrap; animation: scroll-left 80s linear infinite; padding: 4px 0; font-size: 11px; color: var(--green3); }
+@keyframes scroll-left { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+.tick-item { display: inline-block; margin-right: 40px; }
+.tick-item .tick-name { color: var(--green); }
+.tick-item .tick-val  { color: var(--amber); }
+.nav-section { padding: 6px 12px 2px; font-size: 10px; color: var(--green-dim); letter-spacing: 1px; }
+.nav-item { display: block; width: 100%; text-align: left; background: none; border: none; color: var(--green3); font-family: var(--font); font-size: 12px; padding: 6px 16px; cursor: pointer; transition: all .15s; }
+.nav-item:hover, .nav-item.active { background: var(--bg3); color: var(--green); border-left: 2px solid var(--green); padding-left: 14px; }
+.nav-divider { border: none; border-top: 1px solid var(--border); margin: 6px 12px; }
+.panel-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 4px 12px; background: var(--bg3); border-bottom: 1px solid var(--border); font-size: 11px; color: var(--green3); }
+.panel-title { font-weight: bold; color: var(--green); letter-spacing: 1px; font-size: 12px; }
+.filters { flex-shrink: 0; display: flex; gap: 8px; flex-wrap: wrap; padding: 6px 12px; background: var(--bg2); border-bottom: 1px solid var(--border); }
+.filter-label { font-size: 10px; color: var(--green-dim); white-space: nowrap; }
+.filter-group { display: flex; align-items: center; gap: 4px; }
+select, input[type=text], input[type=number] {
+  background: var(--bg3); border: 1px solid var(--green-dim); color: var(--green);
+  font-family: var(--font); font-size: 11px; padding: 2px 6px; border-radius: 2px; outline: none;
+}
+select:focus, input:focus { border-color: var(--green); }
+.btn { background: var(--green-dark); border: 1px solid var(--green-dim); color: var(--green3); font-family: var(--font); font-size: 11px; padding: 2px 10px; cursor: pointer; border-radius: 2px; }
+.btn:hover { background: var(--bg3); color: var(--green); border-color: var(--green); }
+.table-wrap { flex: 1; overflow: auto; min-height: 0; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { position: sticky; top: 0; background: var(--bg3); color: var(--green3); padding: 5px 10px; text-align: left; font-weight: normal; border-bottom: 1px solid var(--green-dim); cursor: pointer; white-space: nowrap; user-select: none; font-size: 11px; letter-spacing: .5px; z-index: 1; }
+th:hover { color: var(--green); }
+th .si { font-size: 9px; margin-left: 4px; opacity: .5; }
+th.sorted .si { opacity: 1; color: var(--amber); }
+td { padding: 4px 10px; border-bottom: 1px solid #001100; white-space: nowrap; }
+tr:hover td { background: var(--green-dark); cursor: pointer; }
+tr.selected td { background: #001f00; border-left: 2px solid var(--green); }
+.score-high { color: var(--green);  font-weight: bold; }
+.score-mid  { color: var(--amber); }
+.score-low  { color: var(--red); }
+.badge { display: inline-block; padding: 1px 6px; border-radius: 2px; font-size: 10px; border: 1px solid var(--green-dim); color: var(--green); }
+#radar-grid { display: grid; grid-template-columns: 1fr 1fr; height: 100%; overflow: hidden; }
+.radar-card { border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+.radar-card:nth-child(2n) { border-right: none; }
+.radar-card-header { padding: 5px 10px; background: var(--bg3); border-bottom: 1px solid var(--border); font-size: 11px; color: var(--green3); font-weight: bold; flex-shrink: 0; }
+.radar-card-header em { color: var(--amber); font-style: normal; }
+.radar-row { display: flex; justify-content: space-between; padding: 3px 10px; border-bottom: 1px solid #001100; font-size: 11px; }
+.radar-row:hover { background: var(--green-dark); }
+.radar-name { color: var(--green3); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.radar-val  { color: var(--amber); flex-shrink: 0; margin-left: 8px; }
+.radar-uf   { color: var(--green-dim); width: 28px; flex-shrink: 0; text-align: right; margin-right: 8px; }
+.view { display: none; flex-direction: column; flex: 1; min-height: 0; }
+.view.active { display: flex; }
+#proj-split { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+#proj-top   { flex: 1 1 55%; display: flex; flex-direction: column; min-height: 0; border-bottom: 2px solid var(--green-dim); }
+#proj-bot   { flex: 0 0 45%; display: flex; flex-direction: column; min-height: 0; }
+.tab-bar { flex-shrink: 0; display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); }
+.tab-btn { background: none; border: none; border-right: 1px solid var(--border); color: var(--green3); font-family: var(--font); font-size: 11px; padding: 5px 14px; cursor: pointer; transition: all .15s; }
+.tab-btn:hover { color: var(--green); background: var(--bg3); }
+.tab-btn.active { color: var(--green); background: var(--bg3); border-bottom: 2px solid var(--green); font-weight: bold; }
+.tab-proj-info { flex-shrink: 0; padding: 4px 12px; background: var(--bg2); border-bottom: 1px solid var(--border); font-size: 11px; }
+.tab-pane { display: none; flex: 1; flex-direction: column; min-height: 0; }
+.tab-pane.active { display: flex; }
+#match-split { flex: 1; display: flex; min-height: 0; }
+#match-left  { flex: 0 0 320px; display: flex; flex-direction: column; border-right: 2px solid var(--green-dim); }
+#match-right { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+#match-detail-tabs { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.editais-stats { flex-shrink: 0; display: flex; border-bottom: 1px solid var(--border); background: var(--bg2); }
+.editais-stat  { flex: 1; padding: 6px 12px; border-right: 1px solid var(--border); font-size: 11px; color: var(--green3); }
+.editais-stat:last-child { border-right: none; }
+.editais-stat .es-val { font-size: 18px; font-weight: bold; color: var(--green); display: block; line-height: 1.2; }
+.editais-stat .es-lbl { font-size: 10px; color: var(--green-dim); }
+.prazo-ok     { color: var(--green); }
+.prazo-warn   { color: var(--amber); }
+.prazo-urgent { color: var(--red); animation: pulse 1.2s ease-in-out infinite; }
+.prazo-none   { color: var(--green-dim); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.st-ativo     { color: var(--green);  border-color: var(--green-dim); }
+.st-encerrado { color: var(--red);    border-color: #440000; }
+.empty-state { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; color: var(--green-dim); font-size: 12px; }
+.empty-state code { color: var(--green); background: var(--bg3); padding: 6px 14px; border: 1px solid var(--border); font-family: var(--font); font-size: 11px; }
+#demo-banner { display:none; flex-shrink:0; padding:6px 16px; background:var(--bg3); border-bottom:1px solid var(--border); color:var(--green3); font-size:11px; font-family:var(--font); letter-spacing:.3px; }
+.update-panel { border:1px solid var(--border); padding:16px; margin-bottom:20px; background:var(--bg2); }
+.update-panel h3 { color:var(--green); font-size:11px; letter-spacing:2px; margin:0 0 12px 0; border-bottom:1px solid var(--border); padding-bottom:8px; }
+.status-box { background:var(--bg3); border:1px solid var(--border); padding:10px 14px; margin-bottom:14px; font-size:12px; line-height:1.8; }
+.status-row { display:flex; justify-content:space-between; margin-bottom:2px; }
+.status-label { color:var(--green3); }
+.status-value { color:var(--green); font-weight:bold; }
+.btn-copy { background:transparent; border:1px solid var(--green3); color:var(--green3); font-family:var(--font); font-size:11px; padding:4px 10px; cursor:pointer; transition:all .15s; margin-right:8px; margin-bottom:6px; }
+.btn-copy:hover { border-color:var(--green); color:var(--green); }
+.btn-copy.copied { border-color:var(--amber); color:var(--amber); }
+.btn-external { background:transparent; border:1px solid var(--green); color:var(--green); font-family:var(--font); font-size:11px; padding:5px 12px; cursor:pointer; transition:all .15s; text-decoration:none; display:inline-block; margin-bottom:10px; }
+.btn-external:hover { background:var(--green); color:var(--bg); }
+.fonte-row { display:flex; align-items:center; gap:10px; font-size:11px; margin-bottom:3px; color:var(--green3); }
+.filter-area-btn { background:transparent; border:1px solid var(--border); color:var(--green3); font-family:var(--font); font-size:11px; padding:4px 12px; cursor:pointer; transition:all .15s; }
+.filter-area-btn:hover, .filter-area-btn.active { border-color:var(--green); color:var(--green); background:var(--bg3); }
+.area-badge { display:inline-block; font-size:9px; padding:1px 5px; border-radius:2px; font-weight:bold; letter-spacing:.5px; }
+.fonte-status-ok  { color:var(--green); }
+.fonte-status-off { color:var(--amber); }
+.demo-badge { color:var(--amber); animation:pulse 2s infinite; }
+#modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:9999; align-items:center; justify-content:center; }
+#modal-overlay.open { display:flex; }
+#modal-box { background:var(--bg2); border:1px solid var(--green); width:540px; max-width:95vw; font-family:var(--font); font-size:12px; }
+#modal-box .modal-title { padding:10px 16px; background:var(--bg3); border-bottom:1px solid var(--border); color:var(--green); font-weight:bold; font-size:13px; letter-spacing:1px; display:flex; justify-content:space-between; align-items:center; }
+#modal-box .modal-body  { padding:16px; color:var(--green3); line-height:1.7; }
+#modal-box .modal-cmd   { background:var(--bg3); border:1px solid var(--border); padding:10px 14px; margin:10px 0; color:var(--green); font-size:11px; }
+#modal-box .modal-cmd div { color:var(--green3); }
+#modal-box .modal-cmd code { color:var(--green); }
+#modal-box .modal-footer { padding:10px 16px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px; }
+</style>
+</head>
+<body>
+<div id="root">
+
+  <!-- HEADER -->
+  <div id="header">
+    <div class="hdr-top">
+      <div class="hdr-title">▶ HUB DE CAPTAÇÃO &nbsp;|&nbsp; TERMINAL DE INTELIGÊNCIA v2.0</div>
+      <div class="hdr-stats">
+        <div class="hdr-stat">PROJETOS <span id="stat-projetos">—</span></div>
+        <div class="hdr-stat">SALDO <span id="stat-saldo">—</span></div>
+        <div class="hdr-stat">EMPRESAS <span id="stat-empresas">—</span></div>
+        <div class="hdr-stat">OPORTUNIDADES <span id="stat-editais">—</span></div>
+        <div class="hdr-stat">DATA <span id="stat-data">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div id="ticker"><div id="ticker-inner"></div></div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div class="nav-section">NAVEGAÇÃO</div>
+      <button class="nav-item active" id="nav-projetos" onclick="showView('projetos')">◈ PROJETOS</button>
+      <button class="nav-item"        id="nav-empresas" onclick="showView('empresas')">◈ EMPRESAS</button>
+      <button class="nav-item"        id="nav-radar"    onclick="showView('radar')">◈ RADAR</button>
+      <button class="nav-item"        id="nav-matching" onclick="showView('matching')">◈ MATCHING</button>
+      <button class="nav-item"        id="nav-editais"  onclick="showView('editais')">◈ OPORTUNIDADES</button>
+      <hr class="nav-divider">
+      <div style="padding:4px 8px 2px;">
+        <input type="text" id="sidebar-search" placeholder="🔍 busca por tema..." style="width:100%;font-size:11px;padding:4px 6px;" oninput="buscaUniversal(this.value)" onkeydown="if(event.key==='Enter')buscaUniversal(this.value)">
+      </div>
+      <button class="nav-item"        id="nav-busca"    onclick="showView('busca')" style="display:none;">◈ BUSCA</button>
+      <button class="nav-item"        id="nav-atualizar" onclick="showView('atualizar')">&#x27F3; ATUALIZAR</button>
+      <hr class="nav-divider">
+      <button class="nav-item"        id="nav-config"   onclick="showView('config');initConfigView();">⚙ CONFIG</button>
+      <hr class="nav-divider">
+      <div class="nav-section">REGIÕES</div>
+      <button class="nav-item" onclick="qfRegiao('Sudeste')">  Sudeste</button>
+      <button class="nav-item" onclick="qfRegiao('Nordeste')">  Nordeste</button>
+      <button class="nav-item" onclick="qfRegiao('Sul')">  Sul</button>
+      <button class="nav-item" onclick="qfRegiao('Norte')">  Norte</button>
+      <button class="nav-item" onclick="qfRegiao('Centro-Oeste')">  C-Oeste</button>
+      <button class="nav-item" onclick="qfRegiao('Internacional')">  Internac.</button>
+      <hr class="nav-divider">
+      <button class="nav-item" onclick="clearFilters()">✕ LIMPAR FILTROS</button>
+    </div>
+
+    <!-- CONTENT -->
+    <div id="content">
+
+      <!-- ══ VIEW: PROJETOS ══ -->
+      <div id="view-projetos" class="view active">
+        <div id="proj-split">
+          <div id="proj-top">
+            <div class="panel-header">
+              <span class="panel-title">◈ PROJETOS — LEI DE INCENTIVO AO ESPORTE</span>
+              <span id="proj-count" style="color:var(--green-dim);font-size:11px"></span>
+            </div>
+            <div class="filters">
+              <div class="filter-group"><span class="filter-label">BUSCA:</span>
+                <input type="text" id="f-busca" placeholder="nome / proponente..." style="width:160px" oninput="applyFilters()">
+              </div>
+              <div class="filter-group"><span class="filter-label">UF:</span>
+                <select id="f-uf" onchange="applyFilters()"><option value="">TODAS</option></select>
+              </div>
+              <div class="filter-group"><span class="filter-label">REGIÃO:</span>
+                <select id="f-regiao" onchange="applyFilters()"><option value="">TODAS</option></select>
+              </div>
+              <div class="filter-group"><span class="filter-label">MODALIDADE:</span>
+                <select id="f-modalidade" onchange="applyFilters()"><option value="">TODAS</option></select>
+              </div>
+              <div class="filter-group"><span class="filter-label">ANO:</span>
+                <select id="f-ano" onchange="applyFilters()"><option value="">TODOS</option></select>
+              </div>
+              <button class="btn" onclick="clearFilters()">LIMPAR</button>
+            </div>
+            <div class="table-wrap">
+              <table id="proj-table">
+                <thead><tr>
+                  <th onclick="sortProjBy('nome_projeto')">PROJETO <span class="si">⇅</span></th>
+                  <th onclick="sortProjBy('proponente')">PROPONENTE <span class="si">⇅</span></th>
+                  <th onclick="sortProjBy('uf')">UF <span class="si">⇅</span></th>
+                  <th onclick="sortProjBy('modalidade_esportiva')">MODALIDADE <span class="si">⇅</span></th>
+                  <th onclick="sortProjBy('ano_aprovacao')">ANO <span class="si">⇅</span></th>
+                  <th onclick="sortProjBy('valor_aprovado')">VL. APROVADO <span class="si">⇅</span></th>
+                  <th onclick="sortProjBy('valor_captado')">CAPTADO <span class="si">⇅</span></th>
+                  <th onclick="sortProjBy('saldo_disponivel')">SALDO DISP. <span class="si">⇅</span></th>
+                  <th onclick="sortProjBy('score_prioridade')">SCORE <span class="si">⇅</span></th>
+                </tr></thead>
+                <tbody id="proj-body"></tbody>
+              </table>
+            </div>
+            <div id="proj-pag-ctrl" style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;"></div>
+          </div>
+
+          <div id="proj-bot">
+            <div class="tab-bar">
+              <button class="tab-btn active" id="tb-emp"   onclick="switchTab('emp')">◈ EMPRESAS COMPATÍVEIS <span id="tc-emp"  style="color:var(--green-dim)"></span></button>
+              <button class="tab-btn"        id="tb-edit"  onclick="switchTab('edit')">◈ OPORTUNIDADES COMPATÍVEIS <span id="tc-edit" style="color:var(--green-dim)"></span></button>
+            </div>
+            <div class="tab-proj-info">
+              <span id="match-proj-name" style="color:var(--green)">Clique em um projeto acima para ver empresas e editais compatíveis</span>
+            </div>
+            <div class="tab-pane active" id="pane-emp">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr>
+                    <th>#</th><th>EMPRESA</th><th>SETOR</th><th>UF</th>
+                    <th>POTENCIAL</th><th>GEO</th><th>SET.</th><th>FIN.</th>
+                    <th>MATCH</th>
+                  </tr></thead>
+                  <tbody id="match-body"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane" id="pane-edit">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr>
+                    <th>SCORE</th><th>EDITAL</th><th>FINANCIADOR</th>
+                    <th>PRAZO</th><th>ÁREA</th><th>GEO</th><th>TEMA</th><th>LINK</th>
+                  </tr></thead>
+                  <tbody id="match-edit-body">
+                    <tr><td colspan="8" style="color:var(--green-dim);text-align:center;padding:10px;">Selecione um projeto acima</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VIEW: EMPRESAS ══ -->
+      <div id="view-empresas" class="view">
+        <div class="panel-header">
+          <span class="panel-title">◈ RANKING DE EMPRESAS — POTENCIAL DE INVESTIMENTO</span>
+          <span id="emp-count" style="color:var(--green-dim);font-size:11px"></span>
+        </div>
+        <div class="filters">
+          <div class="filter-group"><span class="filter-label">BUSCA:</span>
+            <input type="text" id="f-emp-busca" placeholder="empresa / setor..." style="width:170px" oninput="renderEmpresas()">
+          </div>
+          <div class="filter-group"><span class="filter-label">SETOR:</span>
+            <select id="f-emp-setor" onchange="renderEmpresas()"><option value="">TODOS</option></select>
+          </div>
+          <div class="filter-group"><span class="filter-label">REGIÃO:</span>
+            <select id="f-emp-regiao" onchange="renderEmpresas()"><option value="">TODAS</option></select>
+          </div>
+          <button class="btn" onclick="clearEmpFilters()">LIMPAR</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th onclick="sortT('emp','score_empresa')">SCORE <span class="si">⇅</span></th>
+              <th onclick="sortT('emp','nome_empresa')">EMPRESA <span class="si">⇅</span></th>
+              <th onclick="sortT('emp','setor')">SETOR <span class="si">⇅</span></th>
+              <th onclick="sortT('emp','uf_sede')">UF <span class="si">⇅</span></th>
+              <th onclick="sortT('emp','regiao_sede')">REGIÃO <span class="si">⇅</span></th>
+              <th onclick="sortT('emp','faturamento_anual')">FATURAMENTO <span class="si">⇅</span></th>
+              <th onclick="sortT('emp','potencial_investimento')">POTENCIAL INV. <span class="si">⇅</span></th>
+              <th>SITE</th>
+            </tr></thead>
+            <tbody id="emp-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ VIEW: RADAR ══ -->
+      <div id="view-radar" class="view">
+        <div class="panel-header">
+          <span class="panel-title">◈ RADAR DE OPORTUNIDADES — PROSPECÇÃO IMEDIATA</span>
+        </div>
+        <div id="radar-grid" style="flex:1;overflow:hidden;">
+          <div class="radar-card">
+            <div class="radar-card-header">💰 MAIORES SALDOS DISPONÍVEIS <em id="r1-c"></em></div>
+            <div id="r-saldos"></div>
+          </div>
+          <div class="radar-card">
+            <div class="radar-card-header">⏳ ENCERRANDO EM BREVE <em id="r2-c"></em></div>
+            <div id="r-encerrando"></div>
+          </div>
+          <div class="radar-card" style="border-top:1px solid var(--border)">
+            <div class="radar-card-header">⭐ ALTA PRIORIDADE (SCORE ≥ 0.70) <em id="r3-c"></em></div>
+            <div id="r-prioridade"></div>
+          </div>
+          <div class="radar-card" style="border-top:1px solid var(--border)">
+            <div class="radar-card-header">📈 MOMENTUM POSITIVO <em id="r4-c"></em></div>
+            <div id="r-momentum"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VIEW: MATCHING ══ -->
+      <div id="view-matching" class="view">
+        <div class="panel-header" style="flex-shrink:0;">
+          <span class="panel-title">◈ MATCHING INTELIGENTE — PROJETO × EMPRESA × EDITAL</span>
+          <span id="matching-proj-count" style="color:var(--green-dim);font-size:11px"></span>
+        </div>
+        <div id="match-split">
+          <div id="match-left">
+            <div style="flex-shrink:0;padding:4px 8px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:10px;color:var(--green-dim);letter-spacing:.5px;">
+              PROJETOS — clique para ver matching
+            </div>
+            <div style="flex-shrink:0;padding:4px 8px;background:var(--bg2);border-bottom:1px solid var(--border);">
+              <input type="text" id="f-match-busca" placeholder="buscar projeto..." style="width:100%;font-size:11px;" oninput="renderMatchLeft()">
+            </div>
+            <div class="table-wrap">
+              <table id="match-left-table" style="font-size:11px;">
+                <thead><tr>
+                  <th style="font-size:10px;">PROJETO</th>
+                  <th style="font-size:10px;">UF</th>
+                  <th style="font-size:10px;">SALDO</th>
+                </tr></thead>
+                <tbody id="match-left-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="match-right">
+            <div id="match-right-empty" class="empty-state">
+              <div style="color:var(--green3);font-size:13px;">◈ Selecione um projeto à esquerda</div>
+              <div>para ver empresas e editais compatíveis</div>
+            </div>
+            <div id="match-right-detail" style="display:none;flex:1;flex-direction:column;min-height:0;">
+              <div style="flex-shrink:0;padding:5px 12px;background:var(--bg3);border-bottom:1px solid var(--border);">
+                <span id="mr-proj-name" style="color:var(--green);font-weight:bold;font-size:12px;"></span>
+                <span id="mr-proj-meta" style="color:var(--green3);font-size:11px;margin-left:12px;"></span>
+              </div>
+              <div class="tab-bar" style="flex-shrink:0;">
+                <button class="tab-btn active" id="mrt-emp"  onclick="switchMatchTab('emp')">◈ EMPRESAS <span id="mrc-emp" style="color:var(--green-dim)"></span></button>
+                <button class="tab-btn"        id="mrt-edit" onclick="switchMatchTab('edit')">◈ OPORTUNIDADES <span id="mrc-edit" style="color:var(--green-dim)"></span></button>
+              </div>
+              <div class="tab-pane active" id="mrp-emp" style="flex:1;min-height:0;">
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr>
+                      <th>#</th><th>EMPRESA</th><th>SETOR</th><th>PAÍS/UF</th>
+                      <th>POTENCIAL</th><th>GEO</th><th>SET.</th><th>FIN.</th>
+                      <th>MATCH</th>
+                    </tr></thead>
+                    <tbody id="mr-emp-body"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="tab-pane" id="mrp-edit" style="flex:1;min-height:0;">
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr>
+                      <th>SCORE</th><th>EDITAL</th><th>FINANCIADOR</th>
+                      <th>PRAZO</th><th>ÁREA</th><th>GEO</th><th>TEMA</th><th>LINK</th>
+                    </tr></thead>
+                    <tbody id="mr-edit-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VIEW: EDITAIS ══ -->
+      <div id="view-editais" class="view">
+        <div class="panel-header">
+          <span class="panel-title">◈ OPORTUNIDADES — NOTICIAS E FONTES DE FINANCIAMENTO</span>
+          <span id="editais-count" style="color:var(--green-dim);font-size:11px"></span>
+        </div>
+        <div id="demo-banner">
+          ○ &nbsp;Nenhuma oportunidade carregada ainda. Execute <code style="background:rgba(0,0,0,.2);padding:1px 6px;">python scripts/coletar_editais.py</code> para varrer os portais.
+        </div>
+        <div class="editais-stats">
+          <div class="editais-stat">
+            <span class="es-val" id="es-ativos">—</span>
+            <span class="es-lbl">OPORTUNIDADES ATIVAS</span>
+          </div>
+          <div class="editais-stat">
+            <span class="es-val" id="es-30d" style="color:var(--amber)">—</span>
+            <span class="es-lbl">ENCERRAM EM 30 DIAS</span>
+          </div>
+          <div class="editais-stat">
+            <span class="es-val" id="es-7d" style="color:var(--red)">—</span>
+            <span class="es-lbl">ENCERRAM EM 7 DIAS</span>
+          </div>
+          <div class="editais-stat" style="flex:0 0 auto;padding:6px 12px;display:flex;align-items:center;">
+            <button onclick="openModal()" style="background:transparent;border:1px solid var(--green);color:var(--green);font-family:var(--font);font-size:11px;padding:4px 12px;cursor:pointer;letter-spacing:.5px;" onmouseover="this.style.background='var(--green-dark)'" onmouseout="this.style.background='transparent'">
+              ↺ ATUALIZAR OPORTUNIDADES
+            </button>
+          </div>
+          <div class="editais-stat">
+            <span class="es-val" id="es-updated" style="font-size:13px">—</span>
+            <span class="es-lbl">ATUALIZADO</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin:8px 12px 4px;flex-wrap:wrap;">
+          <button class="filter-area-btn active" onclick="filtrarAreaEditais('todos')" id="fab-todos">◈ TODOS</button>
+          <button class="filter-area-btn" onclick="filtrarAreaEditais('esporte')" id="fab-esporte">🏅 ESPORTE</button>
+          <button class="filter-area-btn" onclick="filtrarAreaEditais('cultura')" id="fab-cultura">🎭 CULTURA</button>
+          <button class="filter-area-btn" onclick="filtrarAreaEditais('educacao')" id="fab-educacao">📚 EDUCAÇÃO</button>
+          <button class="filter-area-btn" onclick="filtrarAreaEditais('social')" id="fab-social">🤝 SOCIAL</button>
+          <button class="filter-area-btn" onclick="filtrarAreaEditais('outros')" id="fab-outros">+ OUTROS</button>
+        </div>
+        <div class="filters">
+          <div class="filter-group"><span class="filter-label">BUSCA:</span>
+            <input type="text" id="f-edit-busca" placeholder="título / financiador..." style="width:200px" oninput="renderEditais()">
+          </div>
+          <div class="filter-group"><span class="filter-label">STATUS:</span>
+            <select id="f-edit-status" onchange="recarregarEditais()">
+              <option value="ativo">Ativo</option>
+              <option value="">Todos</option>
+              <option value="encerrado">Encerrado</option>
+            </select>
+          </div>
+          <button class="btn" onclick="clearEditaisFilters()">LIMPAR</button>
+        </div>
+        <div id="editais-empty" style="display:none;" class="empty-state">
+          <div style="color:var(--green3)">Nenhuma oportunidade encontrada</div>
+        </div>
+        <div class="table-wrap" id="editais-table-wrap">
+          <table>
+            <thead><tr>
+              <th>STATUS</th><th>PRAZO</th><th>OPORTUNIDADE</th>
+              <th>FINANCIADOR</th><th>ÁREA</th><th>FONTE</th><th>LINK</th>
+            </tr></thead>
+            <tbody id="editais-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ VIEW: BUSCA ══ -->
+      <div id="view-busca" class="view">
+        <div class="panel-header">
+          <span class="panel-title">◈ BUSCA UNIVERSAL — PROJETOS · EMPRESAS · EDITAIS</span>
+          <span id="busca-total" style="color:var(--green-dim);font-size:11px;"></span>
+        </div>
+        <div style="flex-shrink:0;padding:6px 12px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
+          <span style="color:var(--green-dim);font-size:11px;">TEMA / MODALIDADE:</span>
+          <input type="text" id="busca-input-main" placeholder="ex: canoagem, futebol, paralímpico, judô..." style="flex:1;font-size:12px;padding:4px 8px;" oninput="buscaUniversal(this.value)">
+          <button class="btn" onclick="limparBusca()">✕ LIMPAR</button>
+        </div>
+        <div style="flex:1;overflow:auto;min-height:0;">
+          <div style="border-bottom:1px solid var(--border);">
+            <div style="padding:5px 12px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+              <span style="color:var(--green);font-weight:bold;font-size:12px;">PROJETOS</span>
+              <span id="busca-n-proj" style="color:var(--green-dim);font-size:11px;"></span>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:11px;">
+              <thead><tr>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">PROJETO</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">MODALIDADE</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">UF</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">SALDO</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">SCORE</th>
+              </tr></thead>
+              <tbody id="busca-proj-body"></tbody>
+            </table>
+          </div>
+          <div style="border-bottom:1px solid var(--border);">
+            <div style="padding:5px 12px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+              <span style="color:var(--amber);font-weight:bold;font-size:12px;">EMPRESAS PATROCINADORAS</span>
+              <span id="busca-n-emp" style="color:var(--green-dim);font-size:11px;"></span>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:11px;">
+              <thead><tr>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">EMPRESA</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">SETOR</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">REGIÃO</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">POTENCIAL INV.</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">SCORE</th>
+              </tr></thead>
+              <tbody id="busca-emp-body"></tbody>
+            </table>
+          </div>
+          <div>
+            <div style="padding:5px 12px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+              <span style="color:var(--green);font-weight:bold;font-size:12px;">EDITAIS E CHAMADAS PÚBLICAS</span>
+              <span id="busca-n-edit" style="color:var(--green-dim);font-size:11px;"></span>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:11px;">
+              <thead><tr>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">STATUS</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">PRAZO</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">EDITAL</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">FINANCIADOR</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">ÁREA</th>
+                <th style="background:var(--bg3);padding:4px 10px;text-align:left;font-weight:normal;border-bottom:1px solid var(--green-dim);font-size:10px;white-space:nowrap;">LINK</th>
+              </tr></thead>
+              <tbody id="busca-edit-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VIEW: CONFIG ══ -->
+      <div id="view-config" class="view">
+        <div class="panel-header">
+          <span class="panel-title">⚙ CONFIGURAÇÕES DO SISTEMA</span>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:16px 20px;max-width:720px;">
+          <div style="margin-bottom:20px;">
+            <div style="color:var(--green);font-weight:bold;font-size:12px;letter-spacing:1px;margin-bottom:4px;">━━━ CHAVES DE API ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+            <div style="color:var(--green-dim);font-size:11px;margin-bottom:12px;">As chaves são salvas localmente no seu navegador (localStorage). Nunca são enviadas para nenhum servidor externo.</div>
+            <div style="border:1px solid var(--border);padding:10px 14px;margin-bottom:10px;background:var(--bg2);">
+              <div style="color:var(--green3);font-size:11px;margin-bottom:2px;">Portal da Transparência — Convênios &amp; Termos MROSC</div>
+              <div style="color:var(--green-dim);font-size:10px;margin-bottom:6px;">Obter em: <span style="color:var(--green)">portaldatransparencia.gov.br/api-de-dados</span></div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="password" id="input_PORTAL_TRANSPARENCIA_API_KEY" placeholder="cole sua chave aqui..."
+                  style="flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--green);font-family:var(--font);font-size:11px;padding:4px 8px;"
+                  onfocus="desmascarar(this)" onblur="mascarar(this)">
+                <button class="btn" onclick="toggleReveal('input_PORTAL_TRANSPARENCIA_API_KEY')" title="Revelar/ocultar">👁</button>
+              </div>
+            </div>
+            <div style="border:1px solid var(--border);padding:10px 14px;margin-bottom:12px;background:var(--bg2);">
+              <div style="color:var(--green3);font-size:11px;margin-bottom:2px;">Anthropic Claude — Varredura inteligente de notícias</div>
+              <div style="color:var(--green-dim);font-size:10px;margin-bottom:6px;">Obter em: <span style="color:var(--green)">console.anthropic.com</span></div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="password" id="input_ANTHROPIC_API_KEY" placeholder="cole sua chave aqui..."
+                  style="flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--green);font-family:var(--font);font-size:11px;padding:4px 8px;"
+                  onfocus="desmascarar(this)" onblur="mascarar(this)">
+                <button class="btn" onclick="toggleReveal('input_ANTHROPIC_API_KEY')" title="Revelar/ocultar">👁</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn" onclick="saveConfig()" style="border-color:var(--green);color:var(--green);">✓ SALVAR CONFIGURAÇÕES</button>
+              <button class="btn" onclick="clearConfig()">✕ LIMPAR TUDO</button>
+              <button class="btn" onclick="gerarEnv()" style="margin-left:auto;">⬇ GERAR ARQUIVO .env</button>
+            </div>
+          </div>
+          <div style="margin-bottom:20px;">
+            <div style="color:var(--green);font-weight:bold;font-size:12px;letter-spacing:1px;margin-bottom:8px;">━━━ STATUS DAS FONTES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+            <table style="width:100%;border-collapse:collapse;font-size:11px;">
+              <tbody>
+                <tr><td style="padding:4px 8px;color:var(--green3);">Portal da Transparência (Convênios)</td>  <td style="padding:4px 8px;" id="status_portal">—</td></tr>
+                <tr><td style="padding:4px 8px;color:var(--green3);">Termos de Fomento MROSC (Lei 13.019)</td> <td style="padding:4px 8px;" id="status_mrosc">—</td></tr>
+                <tr><td style="padding:4px 8px;color:var(--green3);">Claude IA — Varredura de Notícias</td>    <td style="padding:4px 8px;" id="status_claude">—</td></tr>
+                <tr><td style="padding:4px 8px;color:var(--green3);">RSS: Obs. 3º Setor / Capta / GIFE</td>    <td style="padding:4px 8px;color:var(--green);">● SEMPRE ATIVO</td></tr>
+                <tr><td style="padding:4px 8px;color:var(--green3);">RSS Gov.br: Esporte / Cultura / MDH</td>  <td style="padding:4px 8px;color:var(--green);">● SEMPRE ATIVO</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <div style="color:var(--green);font-weight:bold;font-size:12px;letter-spacing:1px;margin-bottom:8px;">━━━ RECARREGAR BANCO DE DADOS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+            <div style="color:var(--green-dim);font-size:11px;margin-bottom:8px;">Após atualizar os CSVs no servidor, recarregue o banco sem reiniciar:</div>
+            <button class="btn" onclick="recarregarBanco()" style="border-color:var(--amber);color:var(--amber);">↺ RECARREGAR BANCO (POST /api/reload)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VIEW: ATUALIZAR ══ -->
+      <div id="view-atualizar" class="view" style="overflow-y:auto;padding:20px 24px;">
+        <div class="update-panel">
+          <h3>━━━ PROJETOS — LEI DE INCENTIVO AO ESPORTE</h3>
+          <div style="font-size:11px;color:var(--green3);margin-bottom:10px;">
+            Fonte oficial: <span style="color:var(--green)">Ministerio do Esporte</span>
+            &nbsp;—&nbsp; Frequencia: <span style="color:var(--green)">mensal</span>
+          </div>
+          <div style="font-size:11px;color:var(--green3);margin-bottom:8px;">COMO ATUALIZAR:</div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px;color:var(--green-dim);margin-bottom:6px;">1. Baixe a planilha mais recente:</div>
+            <a href="https://www.gov.br/esporte/pt-br/acoes-e-programas/lei-de-incentivo-ao-esporte" target="_blank" class="btn-external">↗ ABRIR PAGINA DO MINISTERIO DO ESPORTE</a>
+          </div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px;color:var(--green-dim);margin-bottom:6px;">2. Execute no servidor:</div>
+            <button id="btn-copy-imp" class="btn-copy" onclick="copyCmd('python3 scripts/importar_ministerio_esporte.py /caminho/planilha.xlsx', 'btn-copy-imp')">[ COPIAR COMANDO ]</button>
+            <code style="font-size:11px;color:var(--green3)">python3 scripts/importar_ministerio_esporte.py /caminho/planilha.xlsx</code>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--green-dim);margin-bottom:6px;">3. Recarregue o banco via API:</div>
+            <button class="btn" onclick="recarregarBanco()" style="border-color:var(--amber);color:var(--amber);">↺ POST /api/reload</button>
+          </div>
+        </div>
+        <div class="update-panel">
+          <h3>━━━ OPORTUNIDADES — FONTES ATIVAS</h3>
+          <div style="font-size:11px;color:var(--green3);margin-bottom:8px;">COMO ATUALIZAR:</div>
+          <div style="margin-bottom:10px;">
+            <button id="btn-copy-atu" class="btn-copy" onclick="copyCmd('python3 scripts/atualizar_tudo.py', 'btn-copy-atu')">[ COPIAR COMANDO ]</button>
+            <code style="font-size:11px;color:var(--green3)">python3 scripts/atualizar_tudo.py</code>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--green-dim);margin-bottom:6px;">Depois recarregue o banco:</div>
+            <button class="btn" onclick="recarregarBanco()" style="border-color:var(--amber);color:var(--amber);">↺ POST /api/reload</button>
+          </div>
+        </div>
+        <div class="update-panel">
+          <h3>━━━ EMPRESAS — BASE REAL LIE + ROUANET</h3>
+          <div style="font-size:11px;color:var(--green3);margin-bottom:8px;">COMO ATUALIZAR:</div>
+          <div style="margin-bottom:10px;">
+            <button id="btn-copy-imp-emp" class="btn-copy" onclick="copyCmd('python3 scripts/importar_empresas.py', 'btn-copy-imp-emp')">[ COPIAR COMANDO ]</button>
+            <code style="font-size:11px;color:var(--green3)">python3 scripts/importar_empresas.py</code>
+          </div>
+          <div>
+            <button id="btn-copy-match-emp" class="btn-copy" onclick="copyCmd('python3 scripts/matching.py', 'btn-copy-match-emp')">[ COPIAR COMANDO ]</button>
+            <code style="font-size:11px;color:var(--green3)">python3 scripts/matching.py</code>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+
+  <!-- MODAL -->
+  <div id="modal-overlay" onclick="closeModalOutside(event)">
+    <div id="modal-box">
+      <div class="modal-title">
+        ↺ COMO ATUALIZAR OS EDITAIS
+        <button onclick="closeModal()" style="background:none;border:none;color:var(--green3);font-size:16px;cursor:pointer;font-family:var(--font);">✕</button>
+      </div>
+      <div class="modal-body">
+        <div>Para atualizar os editais com dados do dia, execute os comandos abaixo no servidor:</div>
+        <div class="modal-cmd">
+          <div style="color:var(--green-dim);margin-bottom:4px;"># Na pasta do projeto no servidor:</div>
+          <code>python scripts/coletar_editais.py</code><br>
+          <code>python scripts/matching_editais.py</code>
+        </div>
+        <div style="color:var(--green-dim);font-size:11px;">Depois chame o endpoint de reload:</div>
+        <div class="modal-cmd"><code>POST /api/reload</code></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="btn-copiar" onclick="copiarComandos()">⎘ Copiar comandos</button>
+        <button class="btn" onclick="recarregarBanco()" style="border-color:var(--amber);color:var(--amber);">↺ Recarregar agora</button>
+        <button class="btn" onclick="closeModal()" style="border-color:var(--green);color:var(--green);">✕ Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="statusbar">
+    HUB DE CAPTAÇÃO v2.0 &nbsp;|&nbsp; Lei de Incentivo ao Esporte &nbsp;|&nbsp;
+    <span style="color:var(--green)">SISTEMA OPERACIONAL</span> &nbsp;|&nbsp;
+    Dados: <span id="stat-data-bot">—</span>
+  </div>
+</div>
+
+<script>
+const API = '';
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let ALL_PROJETOS  = [];
+let ALL_EMPRESAS  = [];
+let ALL_EDITAIS   = [];
+let FILTROS_DISP  = { ufs: [], regioes: [], anos: [], setores: [], regioes_emp: [] };
+let projFiltered  = [];
+let empFiltered   = [];
+let matchProjList = [];
+let selectedProj  = null;
+let PROJ_FILTROS  = {};
+let PROJ_ORDER_BY = 'score_prioridade';
+let PROJ_PAGE     = 1;
+let PROJ_TOTAL    = 0;
+let PROJ_PAGES    = 0;
+const PROJ_POR_PAG = 50;
+let _areaFiltroAtual = 'todos';
+const sortState = {
+  proj: { col: 'score_prioridade', asc: false },
+  emp:  { col: 'score_empresa',    asc: false },
+};
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function fmtBRL(v) {
+  v = parseFloat(v) || 0;
+  if (v >= 1e9) return 'R$ ' + (v/1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return 'R$ ' + (v/1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return 'R$ ' + (v/1e3).toFixed(0) + 'K';
+  return 'R$ ' + v.toFixed(0);
+}
+function scCls(v) {
+  v = parseFloat(v) || 0;
+  if (v >= 0.70) return 'score-high';
+  if (v >= 0.45) return 'score-mid';
+  return 'score-low';
+}
+function fmtSc(v) {
+  return `<span class="${scCls(v)}">${parseFloat(v||0).toFixed(2)}</span>`;
+}
+function pctStr(captado, aprovado) {
+  if (!aprovado || aprovado == 0) return '—';
+  return (parseFloat(captado)/parseFloat(aprovado)*100).toFixed(0) + '%';
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmtPrazo(dias) {
+  const d = parseInt(dias);
+  if (isNaN(d) || d === -1) return '<span class="prazo-none">—</span>';
+  if (d <= 0)  return '<span class="prazo-urgent">ENCERRADO</span>';
+  if (d <= 7)  return `<span class="prazo-urgent">${d}d ⚠</span>`;
+  if (d <= 30) return `<span class="prazo-warn">${d}d</span>`;
+  return `<span class="prazo-ok">${d}d</span>`;
+}
+async function apiGet(rota) {
+  const r = await fetch(API + rota);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+async function init() {
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  document.getElementById('stat-data').textContent = hoje;
+  document.getElementById('stat-data-bot').textContent = hoje;
+
+  try {
+    const [stats, projData, empData, editData] = await Promise.all([
+      apiGet('/api/stats'),
+      apiGet('/api/projetos?pagina=1&por_pagina=200'),
+      apiGet('/api/empresas?pagina=1&por_pagina=200'),
+      apiGet('/api/editais?pagina=1&por_pagina=200&status=ativo'),
+    ]);
+
+    document.getElementById('stat-projetos').textContent = stats.n_projetos.toLocaleString('pt-BR');
+    document.getElementById('stat-saldo').textContent    = fmtBRL(stats.valor_total);
+    document.getElementById('stat-empresas').textContent = stats.n_empresas.toLocaleString('pt-BR');
+    document.getElementById('stat-editais').textContent  = stats.n_editais.toLocaleString('pt-BR');
+
+    ALL_PROJETOS = projData.projetos;
+    FILTROS_DISP = projData.filtros;
+    PROJ_TOTAL   = projData.total;
+    PROJ_PAGES   = projData.paginas;
+
+    ALL_EMPRESAS = empData.empresas;
+    ALL_EDITAIS  = editData.editais;
+    projFiltered = ALL_PROJETOS.slice(0, PROJ_POR_PAG);
+    empFiltered  = [...ALL_EMPRESAS];
+
+    populateFilters();
+    renderProjetos(projData);
+    renderEmpresas();
+    renderRadar();
+    renderMatchLeft();
+    renderEditaisStats();
+    renderEditais();
+    renderTicker();
+    initDemoBanner();
+    initConfigView();
+  } catch(e) {
+    console.error('Erro ao carregar dados:', e);
+    document.getElementById('stat-projetos').textContent = 'ERRO';
+    document.getElementById('proj-body').innerHTML =
+      '<tr><td colspan="9" style="color:var(--amber);text-align:center;padding:20px;">Erro ao carregar dados. Verifique se o servidor está rodando.</td></tr>';
+  }
+}
+
+function populateFilters() {
+  const fill = (id, arr) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    arr.forEach(v => {
+      if (!v) return;
+      const o = document.createElement('option');
+      o.value = v; o.textContent = v; sel.appendChild(o);
+    });
+  };
+  fill('f-uf', FILTROS_DISP.ufs || []);
+  fill('f-regiao', FILTROS_DISP.regioes || []);
+  fill('f-ano', FILTROS_DISP.anos || []);
+  const setors = [...new Set(ALL_EMPRESAS.map(e=>e.setor).filter(Boolean))].sort();
+  const regemp = [...new Set(ALL_EMPRESAS.map(e=>e.regiao_sede).filter(Boolean))].sort();
+  fill('f-emp-setor', setors);
+  fill('f-emp-regiao', regemp);
+
+  // Modalidades from projetos
+  const mods = [...new Set(ALL_PROJETOS.map(p=>p.modalidade_esportiva).filter(Boolean))].sort();
+  fill('f-modalidade', mods);
+}
+
+// ── VIEWS ─────────────────────────────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  const nb = document.getElementById('nav-' + name);
+  if (nb) nb.classList.add('active');
+}
+function switchTab(tab) {
+  ['emp','edit'].forEach(t => {
+    document.getElementById('tb-' + t).classList.toggle('active', t === tab);
+    document.getElementById('pane-' + t).classList.toggle('active', t === tab);
+  });
+}
+function switchMatchTab(tab) {
+  ['emp','edit'].forEach(t => {
+    document.getElementById('mrt-' + t).classList.toggle('active', t === tab);
+    document.getElementById('mrp-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+// ── PROJETOS ──────────────────────────────────────────────────────────────
+async function carregarProjetos(pagina) {
+  PROJ_PAGE = pagina || 1;
+  const params = new URLSearchParams({ pagina: PROJ_PAGE, por_pagina: PROJ_POR_PAG, order_by: PROJ_ORDER_BY });
+  for (const [k, v] of Object.entries(PROJ_FILTROS)) {
+    if (v) params.set(k, v);
+  }
+  const data = await apiGet('/api/projetos?' + params);
+  PROJ_TOTAL = data.total;
+  PROJ_PAGES = data.paginas;
+  renderProjetos(data);
+}
+
+function renderProjetos(data) {
+  projFiltered = data.projetos;
+  PROJ_TOTAL   = data.total;
+  PROJ_PAGES   = data.paginas;
+  PROJ_PAGE    = data.pagina;
+
+  document.getElementById('proj-count').textContent =
+    PROJ_TOTAL.toLocaleString('pt-BR') + ' projetos  |  pag. ' + PROJ_PAGE + '/' + PROJ_PAGES;
+
+  document.getElementById('proj-body').innerHTML = projFiltered.map((p, i) => {
+    const sel = selectedProj && selectedProj.nome_projeto === p.nome_projeto ? ' selected' : '';
+    const pct = pctStr(p.valor_captado, p.valor_aprovado);
+    return '<tr class="' + sel + '" onclick="selectProj(' + i + ')">' +
+      '<td>' + esc(p.nome_projeto) + '</td>' +
+      '<td style="color:var(--green3);font-size:11px">' + esc(p.proponente) + '</td>' +
+      '<td><span class="badge">' + esc(p.uf) + '</span></td>' +
+      '<td style="color:var(--green3)">' + esc(p.modalidade_esportiva) + '</td>' +
+      '<td style="color:var(--green3)">' + p.ano_aprovacao + '</td>' +
+      '<td>' + fmtBRL(p.valor_aprovado) + '</td>' +
+      '<td style="color:var(--green3)">' + fmtBRL(p.valor_captado) + ' <small style="color:var(--green-dim)">(' + pct + ')</small></td>' +
+      '<td style="color:var(--amber);font-weight:bold">' + fmtBRL(p.saldo_disponivel) + '</td>' +
+      '<td>' + fmtSc(p.score_prioridade) + '</td>' +
+      '</tr>';
+  }).join('');
+
+  const ctrl = document.getElementById('proj-pag-ctrl');
+  if (ctrl) {
+    const inicio = (PROJ_PAGE - 1) * PROJ_POR_PAG + 1;
+    const fim    = Math.min(PROJ_PAGE * PROJ_POR_PAG, PROJ_TOTAL);
+    ctrl.innerHTML =
+      '<button class="btn" onclick="projPagAnterior()" ' + (PROJ_PAGE===1?'disabled style="opacity:.4"':'') + '>&larr; ANTERIOR</button>' +
+      '&nbsp;<span style="font-size:11px;color:var(--green3)">Pag. ' + PROJ_PAGE + ' / ' + PROJ_PAGES + '  (' + inicio + '-' + fim + ' de ' + PROJ_TOTAL.toLocaleString('pt-BR') + ')</span>&nbsp;' +
+      '<button class="btn" onclick="projPagProxima()" ' + (PROJ_PAGE>=PROJ_PAGES?'disabled style="opacity:.4"':'') + '>PROXIMO &rarr;</button>';
+  }
+}
+
+function projPagAnterior() { if (PROJ_PAGE > 1) carregarProjetos(PROJ_PAGE - 1); }
+function projPagProxima()   { if (PROJ_PAGE < PROJ_PAGES) carregarProjetos(PROJ_PAGE + 1); }
+
+async function selectProj(idx) {
+  selectedProj = projFiltered[idx];
+  renderProjetos({ projetos: projFiltered, total: PROJ_TOTAL, paginas: PROJ_PAGES, pagina: PROJ_PAGE });
+  document.getElementById('match-proj-name').textContent = 'Carregando...';
+  document.getElementById('tc-emp').textContent  = '';
+  document.getElementById('tc-edit').textContent = '';
+  try {
+    const data = await apiGet('/api/projeto/' + encodeURIComponent(selectedProj.nome_projeto));
+    _loadProjDetail(selectedProj, data.empresas, data.editais,
+      'match-proj-name', 'tc-emp', 'tc-edit', 'match-body', 'match-edit-body');
+  } catch(e) {
+    document.getElementById('match-proj-name').textContent = 'Erro ao carregar detalhes';
+  }
+}
+
+function applyFilters() {
+  PROJ_FILTROS = {};
+  const busca = document.getElementById('f-busca').value;
+  const uf = document.getElementById('f-uf').value;
+  const regiao = document.getElementById('f-regiao').value;
+  const modalidade = document.getElementById('f-modalidade').value;
+  const ano = document.getElementById('f-ano').value;
+  if (busca) PROJ_FILTROS.busca = busca;
+  if (uf) PROJ_FILTROS.uf = uf;
+  if (regiao) PROJ_FILTROS.regiao = regiao;
+  if (modalidade) PROJ_FILTROS.modalidade = modalidade;
+  if (ano) PROJ_FILTROS.ano = ano;
+  carregarProjetos(1);
+}
+
+function clearFilters() {
+  ['f-busca'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['f-uf','f-regiao','f-modalidade','f-ano'].forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; });
+  PROJ_FILTROS = {};
+  PROJ_ORDER_BY = 'score_prioridade';
+  selectedProj = null;
+  document.getElementById('match-proj-name').textContent = 'Clique em um projeto acima para ver empresas e editais compatíveis';
+  document.getElementById('tc-emp').textContent  = '';
+  document.getElementById('tc-edit').textContent = '';
+  document.getElementById('match-body').innerHTML = '';
+  document.getElementById('match-edit-body').innerHTML =
+    '<tr><td colspan="8" style="color:var(--green-dim);text-align:center;padding:10px;">Selecione um projeto acima</td></tr>';
+  carregarProjetos(1);
+  showView('projetos');
+}
+
+function clearEmpFilters() {
+  const b = document.getElementById('f-emp-busca'); if (b) b.value = '';
+  ['f-emp-setor','f-emp-regiao'].forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; });
+  renderEmpresas();
+}
+
+function clearEditaisFilters() {
+  const b = document.getElementById('f-edit-busca'); if (b) b.value = '';
+  const s = document.getElementById('f-edit-status'); if (s) s.value = 'ativo';
+  _areaFiltroAtual = 'todos';
+  document.querySelectorAll('.filter-area-btn').forEach(b => b.classList.remove('active'));
+  const fab = document.getElementById('fab-todos'); if (fab) fab.classList.add('active');
+  recarregarEditais();
+}
+
+function qfRegiao(r) {
+  clearFilters();
+  const sel = document.getElementById('f-regiao');
+  if (sel) sel.value = r;
+  applyFilters();
+  showView('projetos');
+}
+
+function sortProjBy(col) {
+  const state = sortState.proj;
+  state.asc = state.col === col ? !state.asc : false;
+  state.col = col;
+  PROJ_ORDER_BY = col;
+  carregarProjetos(1);
+  document.querySelectorAll('#proj-table th').forEach(th => {
+    const si = th.querySelector('.si'); if (!si) return;
+    const thCol = th.getAttribute('onclick') || '';
+    if (thCol.includes(`'${col}'`)) {
+      th.classList.add('sorted'); si.textContent = state.asc ? '↑' : '↓';
+    } else {
+      th.classList.remove('sorted'); si.textContent = '⇅';
+    }
+  });
+}
+
+function sortT(type, col) {
+  const state = sortState[type];
+  state.asc = state.col === col ? !state.asc : false;
+  state.col = col;
+  const cmp = (a, b) => {
+    let va = a[col], vb = b[col];
+    if (!isNaN(va) && !isNaN(vb)) { va = parseFloat(va); vb = parseFloat(vb); }
+    if (va < vb) return state.asc ? -1 : 1;
+    if (va > vb) return state.asc ? 1 : -1;
+    return 0;
+  };
+  if (type === 'emp') { empFiltered.sort(cmp); renderEmpresas(); }
+}
+
+// ── PROJ DETAIL ───────────────────────────────────────────────────────────
+function _loadProjDetail(proj, empresas, editais, nameId, cEmpId, cEditId, empBodyId, editBodyId) {
+  document.getElementById(nameId).textContent =
+    proj.nome_projeto + '  |  ' + proj.uf + '  |  ' + proj.modalidade_esportiva;
+  document.getElementById(cEmpId).textContent = '(' + empresas.length + ')';
+
+  document.getElementById(empBodyId).innerHTML = empresas.length
+    ? empresas.map((m, i) => `<tr>
+        <td style="color:var(--green-dim)">${i+1}</td>
+        <td style="font-weight:bold">${esc(m.nome_empresa)}</td>
+        <td style="color:var(--green3);font-size:11px">${esc(m.setor||'—')}</td>
+        <td><span class="badge">${esc(m.uf_sede||'—')}</span></td>
+        <td style="color:var(--amber)">${fmtBRL(m.potencial_investimento)}</td>
+        <td style="color:var(--green3)">${parseFloat(m.score_geo||0).toFixed(2)}</td>
+        <td style="color:var(--green3)">${parseFloat(m.score_setor||0).toFixed(2)}</td>
+        <td style="color:var(--green3)">${parseFloat(m.score_financeiro||0).toFixed(2)}</td>
+        <td>${fmtSc(m.score_match)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="9" style="color:var(--green-dim);text-align:center;padding:10px;">Nenhuma empresa compatível</td></tr>';
+
+  document.getElementById(cEditId).textContent = '(' + editais.length + ')';
+  document.getElementById(editBodyId).innerHTML = editais.length
+    ? editais.map(m => {
+        const area = String(m.areas_tematicas||m.titulo_edital||'').split('|')[0].trim().substring(0,30) || '—';
+        const areaBdg = _areaBadge((m.titulo_edital||'') + (m.areas_tematicas||'') + (m.financiador||''));
+        const link = String(m.url_edital||'').length > 5
+          ? `<a href="${esc(m.url_edital)}" target="_blank" style="color:var(--amber);text-decoration:none;font-weight:bold;">[→]</a>`
+          : '<span style="color:var(--green-dim)">—</span>';
+        return `<tr>
+          <td>${fmtSc(m.score_match)}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-size:11px">${esc(m.titulo_edital)}</td>
+          <td style="color:var(--green3);font-size:11px">${esc(m.financiador)}</td>
+          <td>${fmtPrazo(m.dias_restantes)}</td>
+          <td style="font-size:10px;max-width:110px;overflow:hidden;text-overflow:ellipsis">${areaBdg} ${esc(area)}</td>
+          <td style="color:var(--green3)">${parseFloat(m.score_uf||0).toFixed(2)}</td>
+          <td style="color:var(--green3)">${parseFloat(m.score_tematico||0).toFixed(2)}</td>
+          <td>${link}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="8" style="color:var(--green-dim);text-align:center;padding:10px;">Nenhum edital compatível</td></tr>';
+}
+
+// ── EMPRESAS ──────────────────────────────────────────────────────────────
+function renderEmpresas() {
+  const busca  = (document.getElementById('f-emp-busca').value||'').toLowerCase();
+  const setor  = document.getElementById('f-emp-setor').value;
+  const regiao = document.getElementById('f-emp-regiao').value;
+  empFiltered = ALL_EMPRESAS.filter(e => {
+    if (busca  && !String(e.nome_empresa||'').toLowerCase().includes(busca) &&
+        !String(e.setor||'').toLowerCase().includes(busca)) return false;
+    if (setor  && e.setor !== setor) return false;
+    if (regiao && e.regiao_sede !== regiao) return false;
+    return true;
+  });
+  empFiltered.sort((a,b) => parseFloat(b.score_empresa||0) - parseFloat(a.score_empresa||0));
+  document.getElementById('emp-count').textContent = empFiltered.length + ' empresas';
+  document.getElementById('emp-body').innerHTML = empFiltered.map(e => {
+    const site = String(e.site||'').replace(/https?:\/\//,'').split('/')[0];
+    const intl = e.regiao_sede === 'Internacional' ? ' 🌐' : '';
+    return `<tr>
+      <td>${fmtSc(e.score_empresa)}</td>
+      <td style="font-weight:bold">${esc(e.nome_empresa)}${intl}</td>
+      <td style="color:var(--green3);font-size:11px">${esc(e.setor)}</td>
+      <td><span class="badge">${esc(e.uf_sede)}</span></td>
+      <td style="color:var(--green3)">${esc(e.regiao_sede)}</td>
+      <td>${fmtBRL(e.faturamento_anual)}</td>
+      <td style="color:var(--amber);font-weight:bold">${fmtBRL(e.potencial_investimento)}</td>
+      <td><a href="${esc(e.site)}" target="_blank" style="color:var(--green-dim);font-size:10px;text-decoration:none"
+             onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='var(--green-dim)'">${esc(site)}</a></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── RADAR ─────────────────────────────────────────────────────────────────
+function renderRadar() {
+  const hoje = new Date();
+  const maioresSaldos = [...ALL_PROJETOS].sort((a,b) => parseFloat(b.saldo_disponivel) - parseFloat(a.saldo_disponivel)).slice(0,14);
+  const comDias = ALL_PROJETOS.map(p => {
+    const fim  = new Date(p.data_fim_captacao);
+    const dias = Math.floor((fim - hoje) / (1000*60*60*24));
+    return { ...p, _dias: dias };
+  });
+  const encerrando = comDias.filter(p => p._dias >= 0 && p._dias <= 120).sort((a,b) => a._dias - b._dias).slice(0,14);
+  const altaPrio   = ALL_PROJETOS.filter(p => parseFloat(p.score_prioridade) >= 0.70)
+    .sort((a,b) => parseFloat(b.score_prioridade) - parseFloat(a.score_prioridade)).slice(0,14);
+  const momentum   = ALL_PROJETOS.filter(p => {
+    const pct = parseFloat(p.valor_captado)/(parseFloat(p.valor_aprovado)||1);
+    return pct > 0.3 && parseFloat(p.saldo_disponivel) > 200000;
+  }).sort((a,b) => parseFloat(b.saldo_disponivel) - parseFloat(a.saldo_disponivel)).slice(0,14);
+
+  document.getElementById('r1-c').textContent = `(${maioresSaldos.length})`;
+  document.getElementById('r2-c').textContent = `(${encerrando.length})`;
+  document.getElementById('r3-c').textContent = `(${altaPrio.length})`;
+  document.getElementById('r4-c').textContent = `(${momentum.length})`;
+
+  document.getElementById('r-saldos').innerHTML = maioresSaldos.map(p =>
+    `<div class="radar-row"><span class="radar-name">${esc(p.nome_projeto)}</span>
+     <span class="radar-uf">${p.uf}</span><span class="radar-val">${fmtBRL(p.saldo_disponivel)}</span></div>`).join('');
+  document.getElementById('r-encerrando').innerHTML = encerrando.length
+    ? encerrando.map(p =>
+        `<div class="radar-row"><span class="radar-name">${esc(p.nome_projeto)}</span>
+         <span class="radar-uf">${p.uf}</span>
+         <span class="radar-val" style="color:${p._dias<=30?'var(--red)':'var(--amber)'}">${p._dias}d</span></div>`).join('')
+    : '<div class="radar-row"><span class="radar-name" style="color:var(--green-dim)">Nenhum encerrando em breve</span></div>';
+  document.getElementById('r-prioridade').innerHTML = altaPrio.map(p =>
+    `<div class="radar-row"><span class="radar-name">${esc(p.nome_projeto)}</span>
+     <span class="radar-uf">${p.uf}</span><span class="radar-val score-high">${parseFloat(p.score_prioridade).toFixed(2)}</span></div>`).join('');
+  document.getElementById('r-momentum').innerHTML = momentum.map(p => {
+    const pct = (parseFloat(p.valor_captado)/(parseFloat(p.valor_aprovado)||1)*100).toFixed(0);
+    return `<div class="radar-row"><span class="radar-name">${esc(p.nome_projeto)}</span>
+      <span class="radar-uf">${p.uf}</span>
+      <span class="radar-val">${fmtBRL(p.saldo_disponivel)} <small style="color:var(--green3)">${pct}%</small></span></div>`;
+  }).join('');
+}
+
+// ── MATCHING ──────────────────────────────────────────────────────────────
+function renderMatchLeft() {
+  const busca = (document.getElementById('f-match-busca').value||'').toLowerCase();
+  matchProjList = busca
+    ? ALL_PROJETOS.filter(p => String(p.nome_projeto||'').toLowerCase().includes(busca) || String(p.uf||'').toLowerCase().includes(busca))
+    : [...ALL_PROJETOS];
+  matchProjList.sort((a,b) => parseFloat(b.score_prioridade||0) - parseFloat(a.score_prioridade||0));
+  document.getElementById('matching-proj-count').textContent = matchProjList.length + ' projetos';
+  document.getElementById('match-left-body').innerHTML = matchProjList.map((p, i) => {
+    const sel = selectedProj && selectedProj.nome_projeto === p.nome_projeto ? ' selected' : '';
+    return `<tr class="${sel}" onclick="selectMatchProj(${i})">
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;">${esc(p.nome_projeto)}</td>
+      <td><span class="badge">${esc(p.uf)}</span></td>
+      <td style="color:var(--amber)">${fmtBRL(p.saldo_disponivel)}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function selectMatchProj(idx) {
+  selectedProj = matchProjList[idx];
+  document.getElementById('match-right-empty').style.display  = 'none';
+  document.getElementById('match-right-detail').style.display = 'flex';
+  document.getElementById('mr-proj-name').textContent = 'Carregando...';
+  document.getElementById('mr-proj-meta').textContent =
+    selectedProj.uf + ' | ' + selectedProj.modalidade_esportiva + ' | Saldo: ' + fmtBRL(selectedProj.saldo_disponivel);
+  try {
+    const data = await apiGet('/api/projeto/' + encodeURIComponent(selectedProj.nome_projeto));
+    _loadProjDetail(selectedProj, data.empresas, data.editais,
+      'mr-proj-name', 'mrc-emp', 'mrc-edit', 'mr-emp-body', 'mr-edit-body');
+  } catch(e) {
+    document.getElementById('mr-proj-name').textContent = 'Erro ao carregar';
+  }
+  renderMatchLeft();
+}
+
+// ── EDITAIS ───────────────────────────────────────────────────────────────
+function renderEditaisStats() {
+  const ativos = ALL_EDITAIS.filter(e => String(e.status||'').toLowerCase() === 'ativo');
+  const em30   = ativos.filter(e => { const d = parseInt(e.dias_restantes); return d >= 0 && d <= 30; });
+  const em7    = ativos.filter(e => { const d = parseInt(e.dias_restantes); return d >= 0 && d <= 7;  });
+  document.getElementById('es-ativos').textContent  = ativos.length || '—';
+  document.getElementById('es-30d').textContent     = em30.length  || '—';
+  document.getElementById('es-7d').textContent      = em7.length   || '—';
+  document.getElementById('es-updated').textContent = new Date().toLocaleDateString('pt-BR');
+}
+
+async function recarregarEditais() {
+  const status = document.getElementById('f-edit-status').value;
+  const params = new URLSearchParams({ pagina: 1, por_pagina: 200 });
+  if (status) params.set('status', status);
+  const data = await apiGet('/api/editais?' + params);
+  ALL_EDITAIS = data.editais;
+  renderEditaisStats();
+  renderEditais();
+}
+
+function filtrarAreaEditais(area) {
+  _areaFiltroAtual = area;
+  document.querySelectorAll('.filter-area-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('fab-' + area);
+  if (btn) btn.classList.add('active');
+  renderEditais();
+}
+
+function _filtrarPorArea(editais) {
+  if (_areaFiltroAtual === 'todos') return editais;
+  const mapa = {
+    'esporte':  ['esporte','atletismo','futebol','olympic','paralimpic','sport','swim','basquete','volei','ginastic','modalidade'],
+    'cultura':  ['cultura','rouanet','arte','music','teatro','cinema','audiovisual','patrimoni','cultur'],
+    'educacao': ['educacao','educação','escola','jovem','adolescente','criança','infancia','juventude','aprendiz'],
+    'social':   ['social','osc','assistencia','vulneravel','diversidade','inclusao','terceiro setor','comunidade','habitacao'],
+  };
+  const palavras = mapa[_areaFiltroAtual] || [];
+  return editais.filter(e => {
+    const texto = (String(e.titulo||'') + String(e.areas_tematicas||'') + String(e.financiador||'')).toLowerCase();
+    if (_areaFiltroAtual === 'outros') {
+      const todas = Object.values(mapa).flat();
+      return !todas.some(p => texto.includes(p));
+    }
+    return palavras.some(p => texto.includes(p));
+  });
+}
+
+function _areaBadge(texto) {
+  const t = (texto||'').toLowerCase();
+  if (['esporte','atletismo','futebol','olympic','paralimpic','sport','modalidade','swim','basquete','volei','ginastic'].some(p => t.includes(p)))
+    return '<span class="area-badge" style="background:rgba(0,255,65,.15);color:var(--green);border:1px solid var(--green)">ESP</span>';
+  if (['cultura','rouanet','arte','music','teatro','cinema','audiovisual','patrimoni'].some(p => t.includes(p)))
+    return '<span class="area-badge" style="background:rgba(181,123,238,.15);color:#b57bee;border:1px solid #b57bee">CUL</span>';
+  if (['educacao','educação','escola','jovem','adolescente','infancia','juventude'].some(p => t.includes(p)))
+    return '<span class="area-badge" style="background:rgba(94,184,255,.15);color:#5eb8ff;border:1px solid #5eb8ff">EDU</span>';
+  if (['social','osc','assistencia','vulneravel','diversidade','inclusao','comunidade'].some(p => t.includes(p)))
+    return '<span class="area-badge" style="background:rgba(255,165,0,.15);color:var(--amber);border:1px solid var(--amber)">SOC</span>';
+  return '<span class="area-badge" style="background:rgba(0,255,65,.05);color:var(--green3);border:1px solid var(--border)">OUT</span>';
+}
+
+function renderEditais() {
+  const busca  = (document.getElementById('f-edit-busca').value||'').toLowerCase();
+  if (!ALL_EDITAIS || ALL_EDITAIS.length === 0) {
+    document.getElementById('editais-empty').style.display = 'flex';
+    document.getElementById('editais-table-wrap').style.display = 'none';
+    document.getElementById('editais-count').textContent = '0 editais';
+    return;
+  }
+  document.getElementById('editais-empty').style.display = 'none';
+  document.getElementById('editais-table-wrap').style.display = 'flex';
+  let filtered = ALL_EDITAIS.filter(e => {
+    if (busca && !String(e.titulo||'').toLowerCase().includes(busca) &&
+        !String(e.financiador||'').toLowerCase().includes(busca)) return false;
+    return true;
+  });
+  filtered = _filtrarPorArea(filtered);
+  filtered.sort((a, b) => {
+    const da = parseInt(a.dias_restantes), db = parseInt(b.dias_restantes);
+    return (isNaN(da)||da<0?99999:da) - (isNaN(db)||db<0?99999:db);
+  });
+  document.getElementById('editais-count').textContent = filtered.length + ' editais';
+  document.getElementById('editais-body').innerHTML = filtered.map(e => {
+    const st = String(e.status||'').toLowerCase();
+    const stBdg = st === 'ativo'
+      ? '<span class="badge st-ativo">ATIVO</span>'
+      : '<span class="badge st-encerrado">ENC.</span>';
+    const area1 = String(e.areas_tematicas||'').split('|')[0].trim() || '—';
+    const areaBdg = _areaBadge((e.titulo||'') + (e.areas_tematicas||'') + (e.financiador||''));
+    const link = String(e.url_original||'').length > 5
+      ? `<a href="${esc(e.url_original)}" target="_blank" style="color:var(--amber);text-decoration:none;font-weight:bold;">[→]</a>`
+      : '<span style="color:var(--green-dim)">—</span>';
+    return `<tr>
+      <td>${stBdg}</td>
+      <td>${fmtPrazo(e.dias_restantes)}</td>
+      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;font-size:11px">${esc(e.titulo)}</td>
+      <td style="color:var(--green3);font-size:11px">${esc(e.financiador)}</td>
+      <td style="font-size:10px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${areaBdg} ${esc(area1)}</td>
+      <td style="color:var(--green-dim);font-size:10px">${esc(e.fonte)}</td>
+      <td>${link}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── TICKER ────────────────────────────────────────────────────────────────
+function renderTicker() {
+  const items = [...ALL_PROJETOS].sort((a,b) => parseFloat(b.saldo_disponivel) - parseFloat(a.saldo_disponivel)).slice(0,30);
+  document.getElementById('ticker-inner').innerHTML = items.map(p =>
+    `<span class="tick-item">
+      <span class="tick-name">${esc(String(p.nome_projeto||'').substring(0,32))}</span> &nbsp;
+      <span class="tick-val">${fmtBRL(p.saldo_disponivel)}</span> &nbsp;
+      <span style="color:var(--green-dim)">${p.uf} · ${esc(p.modalidade_esportiva)}</span>
+    </span>`).join('');
+}
+
+// ── BUSCA UNIVERSAL ───────────────────────────────────────────────────────
+function buscaUniversal(termo) {
+  const t = (termo||'').toLowerCase().trim();
+  const si = document.getElementById('sidebar-search');
+  const mi = document.getElementById('busca-input-main');
+  if (si && si.value !== termo) si.value = termo;
+  if (mi && mi.value !== termo) mi.value = termo;
+  if (!t) { limparBusca(); return; }
+  showView('busca');
+  document.getElementById('nav-busca').style.display = 'block';
+
+  const projR = ALL_PROJETOS.filter(p =>
+    String(p.modalidade_esportiva||'').toLowerCase().includes(t) ||
+    String(p.nome_projeto||'').toLowerCase().includes(t) ||
+    String(p.proponente||'').toLowerCase().includes(t) ||
+    String(p.uf||'').toLowerCase().includes(t)
+  ).sort((a,b) => parseFloat(b.score_prioridade||0)-parseFloat(a.score_prioridade||0)).slice(0,30);
+
+  const empR = ALL_EMPRESAS.filter(e =>
+    String(e.setor||'').toLowerCase().includes(t) ||
+    String(e.nome_empresa||'').toLowerCase().includes(t) ||
+    String(e.descricao||'').toLowerCase().includes(t)
+  ).sort((a,b) => parseFloat(b.score_empresa||0)-parseFloat(a.score_empresa||0)).slice(0,30);
+
+  const editR = ALL_EDITAIS.filter(e =>
+    String(e.areas_tematicas||'').toLowerCase().includes(t) ||
+    String(e.titulo||'').toLowerCase().includes(t) ||
+    String(e.financiador||'').toLowerCase().includes(t)
+  ).sort((a,b) => {
+    const da=parseInt(a.dias_restantes), db=parseInt(b.dias_restantes);
+    return (isNaN(da)||da<0?99999:da)-(isNaN(db)||db<0?99999:db);
+  }).slice(0,30);
+
+  document.getElementById('busca-total').textContent = (projR.length+empR.length+editR.length) + ' resultados para "' + termo + '"';
+  document.getElementById('busca-n-proj').textContent = projR.length + ' projetos';
+  document.getElementById('busca-n-emp').textContent  = empR.length  + ' empresas';
+  document.getElementById('busca-n-edit').textContent = editR.length + ' editais';
+
+  document.getElementById('busca-proj-body').innerHTML = projR.map(p =>
+    `<tr><td style="padding:3px 10px;border-bottom:1px solid #001100;">${esc(p.nome_projeto)}</td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;color:var(--green3)">${esc(p.modalidade_esportiva)}</td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;"><span class="badge">${esc(p.uf)}</span></td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;color:var(--amber)">${fmtBRL(p.saldo_disponivel)}</td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;">${fmtSc(p.score_prioridade)}</td></tr>`
+  ).join('') || '<tr><td colspan="5" style="padding:8px 10px;color:var(--green-dim)">Nenhum projeto encontrado</td></tr>';
+
+  document.getElementById('busca-emp-body').innerHTML = empR.map(e =>
+    `<tr><td style="padding:3px 10px;border-bottom:1px solid #001100;font-weight:bold">${esc(e.nome_empresa)}${e.regiao_sede==='Internacional'?' 🌐':''}</td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;color:var(--green3);font-size:10px">${esc(e.setor)}</td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;color:var(--green3)">${esc(e.regiao_sede)}</td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;color:var(--amber)">${fmtBRL(e.potencial_investimento)}</td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;">${fmtSc(e.score_empresa)}</td></tr>`
+  ).join('') || '<tr><td colspan="5" style="padding:8px 10px;color:var(--green-dim)">Nenhuma empresa encontrada</td></tr>';
+
+  document.getElementById('busca-edit-body').innerHTML = editR.map(e => {
+    const st = String(e.status||'').toLowerCase();
+    const stBdg = st==='ativo' ? '<span class="badge st-ativo">ATIVO</span>' : '<span class="badge st-encerrado">ENC.</span>';
+    const link = String(e.url_original||'').length>5
+      ? `<a href="${esc(e.url_original)}" target="_blank" style="color:var(--amber);text-decoration:none;font-weight:bold;">[→]</a>` : '—';
+    return `<tr><td style="padding:3px 10px;border-bottom:1px solid #001100;">${stBdg}</td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;">${fmtPrazo(e.dias_restantes)}</td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;font-size:11px;max-width:220px;overflow:hidden;text-overflow:ellipsis;">${esc(e.titulo)}</td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;color:var(--green3);font-size:11px">${esc(e.financiador)}</td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;color:var(--green3);font-size:10px">${esc(String(e.areas_tematicas||'').split('|')[0].trim()||'—')}</td>
+    <td style="padding:3px 10px;border-bottom:1px solid #001100;">${link}</td></tr>`;
+  }).join('') || '<tr><td colspan="6" style="padding:8px 10px;color:var(--green-dim)">Nenhum edital encontrado</td></tr>';
+}
+
+function limparBusca() {
+  const s = document.getElementById('sidebar-search'); if(s) s.value='';
+  const m = document.getElementById('busca-input-main'); if(m) m.value='';
+  const nb = document.getElementById('nav-busca'); if(nb) nb.style.display='none';
+  showView('projetos');
+}
+
+// ── DEMO BANNER ───────────────────────────────────────────────────────────
+function initDemoBanner() {
+  const b = document.getElementById('demo-banner');
+  if (b) b.style.display = (ALL_EDITAIS.length === 0) ? 'block' : 'none';
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────
+function openModal() { document.getElementById('modal-overlay').classList.add('open'); }
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  const btn = document.getElementById('btn-copiar');
+  if (btn) { btn.textContent = '⎘ Copiar comandos'; btn.disabled = false; }
+}
+function closeModalOutside(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+function copiarComandos() {
+  const cmds = 'python scripts/coletar_editais.py\npython scripts/matching_editais.py';
+  navigator.clipboard.writeText(cmds).then(() => {
+    const btn = document.getElementById('btn-copiar');
+    if (btn) { btn.textContent = '✓ Copiado!'; btn.disabled = true; setTimeout(() => { btn.textContent = '⎘ Copiar comandos'; btn.disabled = false; }, 2500); }
+  }).catch(() => alert('Comandos:\n\n' + cmds));
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ── ADMIN ─────────────────────────────────────────────────────────────────
+async function recarregarBanco() {
+  showToast('Recarregando banco...');
+  try {
+    const r = await fetch(API + '/api/reload', { method: 'POST' });
+    const data = await r.json();
+    if (data.ok) {
+      showToast('✓ Banco recarregado! Recarregando página...');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      showToast('Erro: ' + (data.erro || 'desconhecido'));
+    }
+  } catch(e) {
+    showToast('Erro ao chamar /api/reload');
+  }
+}
+
+// ── CONFIG ────────────────────────────────────────────────────────────────
+function initConfigView() {
+  ['PORTAL_TRANSPARENCIA_API_KEY','ANTHROPIC_API_KEY'].forEach(k => {
+    const val = localStorage.getItem('hub_'+k)||'';
+    const input = document.getElementById('input_'+k);
+    if (!input) return;
+    input.dataset.realValue = val;
+    input.dataset.masked = val ? 'true' : 'false';
+    input.value = val ? ('•'.repeat(Math.max(0,val.length-4))+val.slice(-4)) : '';
+  });
+  updateStatusFontes();
+}
+function desmascarar(input) {
+  if (input.dataset.masked === 'true') { input.value = input.dataset.realValue || ''; input.dataset.masked = 'false'; }
+}
+function mascarar(input) {
+  const val = input.value.trim();
+  if (val && !val.startsWith('•') && val !== input.dataset.realValue) input.dataset.realValue = val;
+  const stored = input.dataset.realValue || '';
+  if (stored) { input.value = '•'.repeat(Math.max(0,stored.length-4)) + stored.slice(-4); input.dataset.masked = 'true'; }
+}
+function toggleReveal(id) {
+  const input = document.getElementById(id); if (!input) return;
+  if (input.dataset.masked === 'true') desmascarar(input); else mascarar(input);
+}
+function saveConfig() {
+  ['PORTAL_TRANSPARENCIA_API_KEY','ANTHROPIC_API_KEY'].forEach(k => {
+    const input = document.getElementById('input_'+k); if (!input) return;
+    let val = (input.dataset.realValue||'').trim();
+    if (!val || val.startsWith('•')) val = input.value.trim();
+    if (val && !val.startsWith('•')) { localStorage.setItem('hub_'+k, val); input.dataset.realValue = val; }
+  });
+  updateStatusFontes();
+  showToast('✓ Configurações salvas com sucesso');
+}
+function clearConfig() {
+  if (!confirm('Limpar todas as chaves salvas?')) return;
+  localStorage.removeItem('hub_PORTAL_TRANSPARENCIA_API_KEY');
+  localStorage.removeItem('hub_ANTHROPIC_API_KEY');
+  initConfigView();
+  showToast('Configurações limpas.');
+}
+function updateStatusFontes() {
+  const temPortal = !!localStorage.getItem('hub_PORTAL_TRANSPARENCIA_API_KEY');
+  const temClaude = !!localStorage.getItem('hub_ANTHROPIC_API_KEY');
+  const sp = document.getElementById('status_portal');
+  const sm = document.getElementById('status_mrosc');
+  const sc = document.getElementById('status_claude');
+  if(sp) { sp.textContent = temPortal ? '● ATIVO' : '○ CHAVE NÃO CONFIGURADA'; sp.style.color = temPortal ? 'var(--green)' : 'var(--amber)'; }
+  if(sm) { sm.textContent = temPortal ? '● ATIVO' : '○ CHAVE NÃO CONFIGURADA'; sm.style.color = temPortal ? 'var(--green)' : 'var(--amber)'; }
+  if(sc) { sc.textContent = temClaude ? '● ATIVO' : '○ CHAVE NÃO CONFIGURADA'; sc.style.color = temClaude ? 'var(--green)' : 'var(--amber)'; }
+}
+function gerarEnv() {
+  const portal = localStorage.getItem('hub_PORTAL_TRANSPARENCIA_API_KEY')||'';
+  const claude = localStorage.getItem('hub_ANTHROPIC_API_KEY')||'';
+  const blob = new Blob(['# Hub de Captação\nPORTAL_TRANSPARENCIA_API_KEY='+portal+'\nANTHROPIC_API_KEY='+claude+'\n'], {type:'text/plain'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '.env'; a.click();
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function copyCmd(texto, btnId) {
+  const cmd = texto.replace(/&amp;/g,'&').replace(/&gt;/g,'>').replace(/&lt;/g,'<');
+  const btn = document.getElementById(btnId);
+  const original = btn ? btn.textContent : '';
+  const feedback = () => {
+    if (!btn) return;
+    btn.textContent = '[ ✓ COPIADO ]'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 2000);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(cmd).then(feedback).catch(() => { _copyFallback(cmd); feedback(); });
+  } else { _copyFallback(cmd); feedback(); }
+}
+function _copyFallback(texto) {
+  const ta = document.createElement('textarea');
+  ta.value = texto; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+}
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--green);color:var(--green);padding:10px 20px;font-family:monospace;font-size:13px;z-index:9999;';
+  t.textContent = msg; document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

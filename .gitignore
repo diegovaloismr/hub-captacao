@@ -4,3 +4,5 @@ data/empresas_patrocinadores_base.csv
 __pycache__/
 *.pyc
 .DS_Store
+data/hub.db
+data/*.db

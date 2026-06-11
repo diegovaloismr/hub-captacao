@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: hub-captacao
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    disk:
+      name: dados
+      mountPath: /data
+      sizeGB: 1
