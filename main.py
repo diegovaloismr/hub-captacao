@@ -12,7 +12,7 @@ import math, os
 from pathlib import Path
 from database import get_conn, init_db, reload_db
 
-app = FastAPI(title="Hub de Captação", version="1.0")
+app = FastAPI(title="Hub de Captação", version="2.0")
 
 app.add_middleware(CORSMiddleware,
     allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -33,19 +33,55 @@ def root():
 def stats():
     conn = get_conn()
     c = conn.cursor()
-    r = {}
+
+    def count(tabela, where=""):
+        try:
+            return c.execute(f"SELECT COUNT(*) FROM {tabela} {where}").fetchone()[0]
+        except Exception:
+            return 0
+
+    def soma(tabela, campo, where=""):
+        try:
+            return c.execute(f"SELECT SUM({campo}) FROM {tabela} {where}").fetchone()[0] or 0
+        except Exception:
+            return 0
+
     try:
-        r['n_projetos']  = c.execute("SELECT COUNT(*) FROM projetos").fetchone()[0]
-        r['n_empresas']  = c.execute("SELECT COUNT(*) FROM empresas").fetchone()[0]
-        r['n_editais']   = c.execute("SELECT COUNT(*) FROM editais WHERE status='ativo'").fetchone()[0]
-        r['n_matches']   = c.execute("SELECT COUNT(*) FROM match_empresas").fetchone()[0]
-        r['valor_total'] = c.execute("SELECT SUM(saldo_disponivel) FROM projetos").fetchone()[0] or 0
-        r['pot_total']   = c.execute("SELECT SUM(potencial_investimento) FROM empresas").fetchone()[0] or 0
-    except Exception:
-        r = {'n_projetos': 0, 'n_empresas': 0, 'n_editais': 0, 'n_matches': 0, 'valor_total': 0, 'pot_total': 0}
+        return {
+            'esporte': {
+                'n_projetos':  count('projetos'),
+                'valor_total': soma('projetos', 'saldo_disponivel'),
+                'n_empresas':  count('empresas'),
+                'n_matches':   count('match_empresas'),
+            },
+            'cultura': {
+                'n_projetos':  count('projetos_rouanet'),
+                'valor_total': soma('projetos_rouanet', 'saldo_disponivel'),
+                'n_empresas':  count('empresas'),
+                'n_matches':   count('match_rouanet'),
+            },
+            'educacao': {
+                'n_projetos':  0,
+                'valor_total': 0,
+                'n_empresas':  0,
+                'n_matches':   0,
+            },
+            'social': {
+                'n_projetos':  0,
+                'valor_total': 0,
+                'n_empresas':  0,
+                'n_matches':   0,
+            },
+            'editais': {
+                'n_ativos':   count('editais', "WHERE status='ativo'"),
+                'n_esporte':  count('editais', "WHERE status='ativo' AND (LOWER(areas_tematicas) LIKE '%esporte%' OR LOWER(titulo) LIKE '%esporte%')"),
+                'n_cultura':  count('editais', "WHERE status='ativo' AND (LOWER(areas_tematicas) LIKE '%cultura%' OR LOWER(titulo) LIKE '%cultura%')"),
+                'n_educacao': count('editais', "WHERE status='ativo' AND (LOWER(areas_tematicas) LIKE '%educacao%' OR LOWER(titulo) LIKE '%educação%')"),
+                'n_social':   count('editais', "WHERE status='ativo' AND (LOWER(areas_tematicas) LIKE '%social%' OR LOWER(titulo) LIKE '%social%')"),
+            },
+        }
     finally:
         conn.close()
-    return r
 
 # ── PROJETOS ───────────────────────────────────────────────────────────────
 
@@ -58,39 +94,47 @@ def listar_projetos(
     regiao: str = Query(""),
     modalidade: str = Query(""),
     ano: str = Query(""),
+    lei: str = Query("LIE"),
     order_by: str = Query("score_prioridade"),
 ):
+    tabela = 'projetos_rouanet' if lei == 'Rouanet' else 'projetos'
+    campo_mod = 'segmento_cultural' if lei == 'Rouanet' else 'modalidade_esportiva'
+
     conn = get_conn()
     c = conn.cursor()
     try:
+        c.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{tabela}'")
+        if not c.fetchone():
+            return {"total": 0, "paginas": 1, "pagina": 1, "projetos": [], "filtros": {}}
+
         where, params = [], []
         if busca:
-            where.append("(nome_projeto LIKE ? OR proponente LIKE ? OR modalidade_esportiva LIKE ?)")
-            params += [f"%{busca}%"] * 3
+            where.append("(nome_projeto LIKE ? OR proponente LIKE ?)")
+            params += [f"%{busca}%"] * 2
         if uf:
             where.append("uf = ?"); params.append(uf)
         if regiao:
             where.append("regiao = ?"); params.append(regiao)
         if modalidade:
-            where.append("modalidade_esportiva LIKE ?"); params.append(f"%{modalidade}%")
+            where.append(f"{campo_mod} LIKE ?"); params.append(f"%{modalidade}%")
         if ano:
             where.append("ano_aprovacao = ?"); params.append(ano)
 
         sql_where = ("WHERE " + " AND ".join(where)) if where else ""
-        cols_validas = {"score_prioridade","saldo_disponivel","valor_aprovado",
-                        "data_fim_captacao","nome_projeto","proponente"}
+        cols_validas = {"score_prioridade", "saldo_disponivel", "valor_aprovado",
+                        "data_fim_captacao", "nome_projeto", "proponente"}
         ob = order_by if order_by in cols_validas else "score_prioridade"
 
-        total = c.execute(f"SELECT COUNT(*) FROM projetos {sql_where}", params).fetchone()[0]
+        total = c.execute(f"SELECT COUNT(*) FROM {tabela} {sql_where}", params).fetchone()[0]
         offset = (pagina - 1) * por_pagina
         rows = c.execute(
-            f"SELECT * FROM projetos {sql_where} ORDER BY {ob} DESC LIMIT ? OFFSET ?",
+            f"SELECT * FROM {tabela} {sql_where} ORDER BY {ob} DESC LIMIT ? OFFSET ?",
             params + [por_pagina, offset]
         ).fetchall()
 
-        ufs  = [r[0] for r in c.execute("SELECT DISTINCT uf FROM projetos ORDER BY uf").fetchall()]
-        regs = [r[0] for r in c.execute("SELECT DISTINCT regiao FROM projetos ORDER BY regiao").fetchall()]
-        anos = [r[0] for r in c.execute("SELECT DISTINCT ano_aprovacao FROM projetos ORDER BY ano_aprovacao DESC").fetchall()]
+        ufs  = [r[0] for r in c.execute(f"SELECT DISTINCT uf FROM {tabela} ORDER BY uf").fetchall()]
+        regs = [r[0] for r in c.execute(f"SELECT DISTINCT regiao FROM {tabela} ORDER BY regiao").fetchall()]
+        anos = [r[0] for r in c.execute(f"SELECT DISTINCT ano_aprovacao FROM {tabela} ORDER BY ano_aprovacao DESC").fetchall()]
 
         return {
             "total": total,
@@ -103,18 +147,21 @@ def listar_projetos(
         conn.close()
 
 @app.get("/api/projeto/{nome_projeto:path}")
-def detalhe_projeto(nome_projeto: str):
+def detalhe_projeto(nome_projeto: str, lei: str = Query("LIE")):
+    tabela_proj  = 'projetos_rouanet' if lei == 'Rouanet' else 'projetos'
+    tabela_match = 'match_rouanet'    if lei == 'Rouanet' else 'match_empresas'
+
     conn = get_conn()
     c = conn.cursor()
     try:
-        proj = c.execute("SELECT * FROM projetos WHERE nome_projeto = ?",
+        proj = c.execute(f"SELECT * FROM {tabela_proj} WHERE nome_projeto = ?",
                          [nome_projeto]).fetchone()
         if not proj:
             return JSONResponse({"erro": "Projeto não encontrado"}, status_code=404)
 
         empresas = c.execute(
-            """SELECT me.*, e.setor, e.uf_sede, e.descricao, e.potencial_investimento
-               FROM match_empresas me
+            f"""SELECT me.*, e.setor, e.uf_sede, e.descricao, e.potencial_investimento
+               FROM {tabela_match} me
                LEFT JOIN empresas e ON e.nome_empresa = me.nome_empresa
                WHERE me.nome_projeto = ?
                ORDER BY me.score_match DESC LIMIT 20""",

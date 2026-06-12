@@ -124,6 +124,9 @@ tr.selected td { background: #001f00; border-left: 2px solid var(--green); }
 .fonte-row { display:flex; align-items:center; gap:10px; font-size:11px; margin-bottom:3px; color:var(--green3); }
 .filter-area-btn { background:transparent; border:1px solid var(--border); color:var(--green3); font-family:var(--font); font-size:11px; padding:4px 12px; cursor:pointer; transition:all .15s; }
 .filter-area-btn:hover, .filter-area-btn.active { border-color:var(--green); color:var(--green); background:var(--bg3); }
+.secao-btn { border-left: 2px solid transparent !important; }
+.secao-btn.active { color: var(--amber) !important; border-left-color: var(--amber) !important; background: var(--bg3); padding-left: 14px; }
+.secao-btn:hover { color: var(--amber) !important; }
 .area-badge { display:inline-block; font-size:9px; padding:1px 5px; border-radius:2px; font-weight:bold; letter-spacing:.5px; }
 .fonte-status-ok  { color:var(--green); }
 .fonte-status-off { color:var(--amber); }
@@ -164,12 +167,18 @@ tr.selected td { background: #001f00; border-left: 2px solid var(--green); }
 
     <!-- SIDEBAR -->
     <div id="sidebar">
-      <div class="nav-section">NAVEGAÇÃO</div>
+      <div class="nav-section">SEÇÃO</div>
+      <button class="nav-item secao-btn active" id="sec-esporte"  onclick="setSecao('esporte')">🏅 ESPORTE</button>
+      <button class="nav-item secao-btn"        id="sec-cultura"  onclick="setSecao('cultura')">🎭 CULTURA</button>
+      <button class="nav-item secao-btn"        id="sec-educacao" onclick="setSecao('educacao')">📚 EDUCAÇÃO</button>
+      <button class="nav-item secao-btn"        id="sec-social"   onclick="setSecao('social')">🤝 SOCIAL</button>
+      <button class="nav-item secao-btn"        id="sec-editais"  onclick="setSecao('editais')">🎯 OPORTUNIDADES</button>
+      <hr class="nav-divider">
+      <div class="nav-section" id="subnav-title">VISUALIZAR</div>
       <button class="nav-item active" id="nav-projetos" onclick="showView('projetos')">◈ PROJETOS</button>
       <button class="nav-item"        id="nav-empresas" onclick="showView('empresas')">◈ EMPRESAS</button>
       <button class="nav-item"        id="nav-radar"    onclick="showView('radar')">◈ RADAR</button>
       <button class="nav-item"        id="nav-matching" onclick="showView('matching')">◈ MATCHING</button>
-      <button class="nav-item"        id="nav-editais"  onclick="showView('editais')">◈ OPORTUNIDADES</button>
       <hr class="nav-divider">
       <div style="padding:4px 8px 2px;">
         <input type="text" id="sidebar-search" placeholder="🔍 busca por tema..." style="width:100%;font-size:11px;padding:4px 6px;" oninput="buscaUniversal(this.value)" onkeydown="if(event.key==='Enter')buscaUniversal(this.value)">
@@ -179,7 +188,7 @@ tr.selected td { background: #001f00; border-left: 2px solid var(--green); }
       <hr class="nav-divider">
       <button class="nav-item"        id="nav-config"   onclick="showView('config');initConfigView();">⚙ CONFIG</button>
       <hr class="nav-divider">
-      <div class="nav-section">REGIÕES</div>
+      <div class="nav-section" id="sidebar-regioes-title">REGIÕES</div>
       <button class="nav-item" onclick="qfRegiao('Sudeste')">  Sudeste</button>
       <button class="nav-item" onclick="qfRegiao('Nordeste')">  Nordeste</button>
       <button class="nav-item" onclick="qfRegiao('Sul')">  Sul</button>
@@ -198,7 +207,7 @@ tr.selected td { background: #001f00; border-left: 2px solid var(--green); }
         <div id="proj-split">
           <div id="proj-top">
             <div class="panel-header">
-              <span class="panel-title">◈ PROJETOS — LEI DE INCENTIVO AO ESPORTE</span>
+              <span class="panel-title" id="titulo-secao">🏅 ESPORTE — LEI DE INCENTIVO AO ESPORTE</span>
               <span id="proj-count" style="color:var(--green-dim);font-size:11px"></span>
             </div>
             <div class="filters">
@@ -225,7 +234,7 @@ tr.selected td { background: #001f00; border-left: 2px solid var(--green); }
                   <th onclick="sortProjBy('nome_projeto')">PROJETO <span class="si">⇅</span></th>
                   <th onclick="sortProjBy('proponente')">PROPONENTE <span class="si">⇅</span></th>
                   <th onclick="sortProjBy('uf')">UF <span class="si">⇅</span></th>
-                  <th onclick="sortProjBy('modalidade_esportiva')">MODALIDADE <span class="si">⇅</span></th>
+                  <th id="th-modalidade" onclick="sortProjBy('modalidade_esportiva')">MODALIDADE <span class="si">⇅</span></th>
                   <th onclick="sortProjBy('ano_aprovacao')">ANO <span class="si">⇅</span></th>
                   <th onclick="sortProjBy('valor_aprovado')">VL. APROVADO <span class="si">⇅</span></th>
                   <th onclick="sortProjBy('valor_captado')">CAPTADO <span class="si">⇅</span></th>
@@ -690,6 +699,8 @@ let PROJ_PAGE     = 1;
 let PROJ_TOTAL    = 0;
 let PROJ_PAGES    = 0;
 const PROJ_POR_PAG = 50;
+let LEI_ATIVA    = 'LIE';
+let SECAO_ATIVA  = 'esporte';
 let _areaFiltroAtual = 'todos';
 const sortState = {
   proj: { col: 'score_prioridade', asc: false },
@@ -741,38 +752,37 @@ async function init() {
   document.getElementById('stat-data-bot').textContent = hoje;
 
   try {
-    const [stats, projData, empData, editData] = await Promise.all([
+    const [stats, empData, editData] = await Promise.all([
       apiGet('/api/stats'),
-      apiGet('/api/projetos?pagina=1&por_pagina=200'),
       apiGet('/api/empresas?pagina=1&por_pagina=200'),
       apiGet('/api/editais?pagina=1&por_pagina=200&status=ativo'),
     ]);
 
-    document.getElementById('stat-projetos').textContent = stats.n_projetos.toLocaleString('pt-BR');
-    document.getElementById('stat-saldo').textContent    = fmtBRL(stats.valor_total);
-    document.getElementById('stat-empresas').textContent = stats.n_empresas.toLocaleString('pt-BR');
-    document.getElementById('stat-editais').textContent  = stats.n_editais.toLocaleString('pt-BR');
-
-    ALL_PROJETOS = projData.projetos;
-    FILTROS_DISP = projData.filtros;
-    PROJ_TOTAL   = projData.total;
-    PROJ_PAGES   = projData.paginas;
+    const s = stats.esporte || {};
+    document.getElementById('stat-projetos').textContent = (s.n_projetos||0).toLocaleString('pt-BR');
+    document.getElementById('stat-saldo').textContent    = fmtBRL(s.valor_total||0);
+    document.getElementById('stat-empresas').textContent = (s.n_empresas||0).toLocaleString('pt-BR');
+    document.getElementById('stat-editais').textContent  = ((stats.editais||{}).n_ativos||0).toLocaleString('pt-BR');
 
     ALL_EMPRESAS = empData.empresas;
     ALL_EDITAIS  = editData.editais;
-    projFiltered = ALL_PROJETOS.slice(0, PROJ_POR_PAG);
     empFiltered  = [...ALL_EMPRESAS];
 
-    populateFilters();
-    renderProjetos(projData);
+    const setors = [...new Set(ALL_EMPRESAS.map(e=>e.setor).filter(Boolean))].sort();
+    const regemp = [...new Set(ALL_EMPRESAS.map(e=>e.regiao_sede).filter(Boolean))].sort();
+    const fillSel = (id, arr) => {
+      const sel = document.getElementById(id); if (!sel) return;
+      arr.forEach(v => { if (!v) return; const o = document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+    };
+    fillSel('f-emp-setor', setors);
+    fillSel('f-emp-regiao', regemp);
+
     renderEmpresas();
-    renderRadar();
-    renderMatchLeft();
     renderEditaisStats();
     renderEditais();
-    renderTicker();
     initDemoBanner();
     initConfigView();
+    await setSecao('esporte');
   } catch(e) {
     console.error('Erro ao carregar dados:', e);
     document.getElementById('stat-projetos').textContent = 'ERRO';
@@ -781,27 +791,33 @@ async function init() {
   }
 }
 
-function populateFilters() {
-  const fill = (id, arr) => {
+function populateFilters(filtros) {
+  const fill = (id, arr, reset) => {
     const sel = document.getElementById(id);
     if (!sel) return;
+    if (reset) sel.innerHTML = '<option value="">TODAS</option>';
     arr.forEach(v => {
       if (!v) return;
       const o = document.createElement('option');
       o.value = v; o.textContent = v; sel.appendChild(o);
     });
   };
-  fill('f-uf', FILTROS_DISP.ufs || []);
-  fill('f-regiao', FILTROS_DISP.regioes || []);
-  fill('f-ano', FILTROS_DISP.anos || []);
-  const setors = [...new Set(ALL_EMPRESAS.map(e=>e.setor).filter(Boolean))].sort();
-  const regemp = [...new Set(ALL_EMPRESAS.map(e=>e.regiao_sede).filter(Boolean))].sort();
-  fill('f-emp-setor', setors);
-  fill('f-emp-regiao', regemp);
-
-  // Modalidades from projetos
-  const mods = [...new Set(ALL_PROJETOS.map(p=>p.modalidade_esportiva).filter(Boolean))].sort();
-  fill('f-modalidade', mods);
+  fill('f-uf', (filtros||FILTROS_DISP).ufs || [], true);
+  fill('f-regiao', (filtros||FILTROS_DISP).regioes || [], true);
+  const anoSel = document.getElementById('f-ano');
+  if (anoSel) {
+    anoSel.innerHTML = '<option value="">TODOS</option>';
+    ((filtros||FILTROS_DISP).anos||[]).forEach(v => {
+      if (!v) return; const o = document.createElement('option'); o.value=v; o.textContent=v; anoSel.appendChild(o);
+    });
+  }
+  const modSel = document.getElementById('f-modalidade');
+  if (modSel) {
+    modSel.innerHTML = '<option value="">TODAS</option>';
+    const field = LEI_ATIVA === 'Rouanet' ? 'segmento_cultural' : 'modalidade_esportiva';
+    const mods = [...new Set(ALL_PROJETOS.map(p=>p[field]).filter(Boolean))].sort();
+    mods.forEach(v => { const o = document.createElement('option'); o.value=v; o.textContent=v; modSel.appendChild(o); });
+  }
 }
 
 // ── VIEWS ─────────────────────────────────────────────────────────────────
@@ -825,16 +841,78 @@ function switchMatchTab(tab) {
   });
 }
 
+// ── SEÇÃO ─────────────────────────────────────────────────────────────────
+const _SECAO_CFG = {
+  esporte:  { lei: 'LIE',     titulo: '🏅 ESPORTE — LEI DE INCENTIVO AO ESPORTE', modLabel: 'MODALIDADE', modField: 'modalidade_esportiva' },
+  cultura:  { lei: 'Rouanet', titulo: '🎭 CULTURA — LEI ROUANET (API SALIC)',      modLabel: 'SEGMENTO',   modField: 'segmento_cultural'   },
+  educacao: { lei: 'LIE',     titulo: '📚 EDUCAÇÃO',                               modLabel: 'MODALIDADE', modField: 'modalidade_esportiva' },
+  social:   { lei: 'LIE',     titulo: '🤝 SOCIAL',                                modLabel: 'MODALIDADE', modField: 'modalidade_esportiva' },
+};
+
+async function setSecao(secao) {
+  SECAO_ATIVA = secao;
+  document.querySelectorAll('.secao-btn').forEach(b => b.classList.remove('active'));
+  const secBtn = document.getElementById('sec-' + secao);
+  if (secBtn) secBtn.classList.add('active');
+
+  const isEditais = secao === 'editais';
+  const subnav = ['subnav-title','nav-projetos','nav-empresas','nav-radar','nav-matching','sidebar-regioes-title'];
+  subnav.forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = isEditais ? 'none' : '';
+  });
+
+  if (isEditais) {
+    showView('editais');
+    return;
+  }
+
+  const cfg = _SECAO_CFG[secao] || _SECAO_CFG.esporte;
+  LEI_ATIVA = cfg.lei;
+
+  const titulo = document.getElementById('titulo-secao');
+  if (titulo) titulo.textContent = cfg.titulo;
+
+  const modTh = document.getElementById('th-modalidade');
+  if (modTh) {
+    modTh.innerHTML = cfg.modLabel + ' <span class="si">⇅</span>';
+    modTh.setAttribute('onclick', `sortProjBy('${cfg.modField}')`);
+  }
+
+  PROJ_FILTROS  = {};
+  PROJ_ORDER_BY = 'score_prioridade';
+  PROJ_PAGE     = 1;
+  selectedProj  = null;
+
+  const matchInfo = document.getElementById('match-proj-name');
+  if (matchInfo) matchInfo.textContent = 'Clique em um projeto acima para ver empresas e editais compatíveis';
+
+  showView('projetos');
+  document.getElementById('nav-projetos').classList.add('active');
+
+  await carregarProjetos(1);
+  try {
+    const big = await apiGet('/api/projetos?pagina=1&por_pagina=200&lei=' + LEI_ATIVA);
+    ALL_PROJETOS = big.projetos;
+  } catch(e) {
+    ALL_PROJETOS = projFiltered.slice();
+  }
+  renderRadar();
+  renderMatchLeft();
+  renderTicker();
+}
+
 // ── PROJETOS ──────────────────────────────────────────────────────────────
 async function carregarProjetos(pagina) {
   PROJ_PAGE = pagina || 1;
-  const params = new URLSearchParams({ pagina: PROJ_PAGE, por_pagina: PROJ_POR_PAG, order_by: PROJ_ORDER_BY });
+  const params = new URLSearchParams({ pagina: PROJ_PAGE, por_pagina: PROJ_POR_PAG, order_by: PROJ_ORDER_BY, lei: LEI_ATIVA });
   for (const [k, v] of Object.entries(PROJ_FILTROS)) {
     if (v) params.set(k, v);
   }
   const data = await apiGet('/api/projetos?' + params);
-  PROJ_TOTAL = data.total;
-  PROJ_PAGES = data.paginas;
+  PROJ_TOTAL   = data.total;
+  PROJ_PAGES   = data.paginas;
+  FILTROS_DISP = data.filtros || FILTROS_DISP;
+  populateFilters(data.filtros);
   renderProjetos(data);
 }
 
@@ -854,7 +932,7 @@ function renderProjetos(data) {
       '<td>' + esc(p.nome_projeto) + '</td>' +
       '<td style="color:var(--green3);font-size:11px">' + esc(p.proponente) + '</td>' +
       '<td><span class="badge">' + esc(p.uf) + '</span></td>' +
-      '<td style="color:var(--green3)">' + esc(p.modalidade_esportiva) + '</td>' +
+      '<td style="color:var(--green3)">' + esc(LEI_ATIVA === 'Rouanet' ? p.segmento_cultural : p.modalidade_esportiva) + '</td>' +
       '<td style="color:var(--green3)">' + p.ano_aprovacao + '</td>' +
       '<td>' + fmtBRL(p.valor_aprovado) + '</td>' +
       '<td style="color:var(--green3)">' + fmtBRL(p.valor_captado) + ' <small style="color:var(--green-dim)">(' + pct + ')</small></td>' +
@@ -884,7 +962,7 @@ async function selectProj(idx) {
   document.getElementById('tc-emp').textContent  = '';
   document.getElementById('tc-edit').textContent = '';
   try {
-    const data = await apiGet('/api/projeto/' + encodeURIComponent(selectedProj.nome_projeto));
+    const data = await apiGet('/api/projeto/' + encodeURIComponent(selectedProj.nome_projeto) + '?lei=' + LEI_ATIVA);
     _loadProjDetail(selectedProj, data.empresas, data.editais,
       'match-proj-name', 'tc-emp', 'tc-edit', 'match-body', 'match-edit-body');
   } catch(e) {
@@ -920,6 +998,8 @@ function clearFilters() {
   document.getElementById('match-edit-body').innerHTML =
     '<tr><td colspan="8" style="color:var(--green-dim);text-align:center;padding:10px;">Selecione um projeto acima</td></tr>';
   carregarProjetos(1);
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-projetos').classList.add('active');
   showView('projetos');
 }
 
@@ -979,8 +1059,9 @@ function sortT(type, col) {
 
 // ── PROJ DETAIL ───────────────────────────────────────────────────────────
 function _loadProjDetail(proj, empresas, editais, nameId, cEmpId, cEditId, empBodyId, editBodyId) {
+  const modField = LEI_ATIVA === 'Rouanet' ? 'segmento_cultural' : 'modalidade_esportiva';
   document.getElementById(nameId).textContent =
-    proj.nome_projeto + '  |  ' + proj.uf + '  |  ' + proj.modalidade_esportiva;
+    proj.nome_projeto + '  |  ' + proj.uf + '  |  ' + proj[modField];
   document.getElementById(cEmpId).textContent = '(' + empresas.length + ')';
 
   document.getElementById(empBodyId).innerHTML = empresas.length
@@ -1115,10 +1196,11 @@ async function selectMatchProj(idx) {
   document.getElementById('match-right-empty').style.display  = 'none';
   document.getElementById('match-right-detail').style.display = 'flex';
   document.getElementById('mr-proj-name').textContent = 'Carregando...';
+  const modField = LEI_ATIVA === 'Rouanet' ? 'segmento_cultural' : 'modalidade_esportiva';
   document.getElementById('mr-proj-meta').textContent =
-    selectedProj.uf + ' | ' + selectedProj.modalidade_esportiva + ' | Saldo: ' + fmtBRL(selectedProj.saldo_disponivel);
+    selectedProj.uf + ' | ' + selectedProj[modField] + ' | Saldo: ' + fmtBRL(selectedProj.saldo_disponivel);
   try {
-    const data = await apiGet('/api/projeto/' + encodeURIComponent(selectedProj.nome_projeto));
+    const data = await apiGet('/api/projeto/' + encodeURIComponent(selectedProj.nome_projeto) + '?lei=' + LEI_ATIVA);
     _loadProjDetail(selectedProj, data.empresas, data.editais,
       'mr-proj-name', 'mrc-emp', 'mrc-edit', 'mr-emp-body', 'mr-edit-body');
   } catch(e) {
@@ -1238,7 +1320,7 @@ function renderTicker() {
     `<span class="tick-item">
       <span class="tick-name">${esc(String(p.nome_projeto||'').substring(0,32))}</span> &nbsp;
       <span class="tick-val">${fmtBRL(p.saldo_disponivel)}</span> &nbsp;
-      <span style="color:var(--green-dim)">${p.uf} · ${esc(p.modalidade_esportiva)}</span>
+      <span style="color:var(--green-dim)">${p.uf} · ${esc(LEI_ATIVA==='Rouanet'?p.segmento_cultural:p.modalidade_esportiva)}</span>
     </span>`).join('');
 }
 

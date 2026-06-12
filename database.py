@@ -21,11 +21,13 @@ def init_db():
         return
     print('[DB] Inicializando banco de dados...')
     csvs = {
-        'projetos':       DATA_DIR / 'projetos_reais_tratados.csv',
-        'empresas':       DATA_DIR / 'empresas_potenciais.csv',
-        'editais':        DATA_DIR / 'editais.csv',
-        'match_empresas': DATA_DIR / 'match_inteligente.csv',
-        'match_editais':  DATA_DIR / 'match_editais.csv',
+        'projetos':         DATA_DIR / 'projetos_reais_tratados.csv',
+        'empresas':         DATA_DIR / 'empresas_potenciais.csv',
+        'editais':          DATA_DIR / 'editais.csv',
+        'match_empresas':   DATA_DIR / 'match_inteligente.csv',
+        'match_editais':    DATA_DIR / 'match_editais.csv',
+        'projetos_rouanet': DATA_DIR / 'projetos_rouanet.csv',
+        'match_rouanet':    DATA_DIR / 'match_rouanet.csv',
     }
     for tabela, path in csvs.items():
         if path.exists():
@@ -35,13 +37,16 @@ def init_db():
         else:
             print(f'  [AVISO] {path.name} nao encontrado — tabela {tabela} vazia')
     indices = [
-        "CREATE INDEX IF NOT EXISTS idx_proj_score ON projetos(score_prioridade DESC)",
-        "CREATE INDEX IF NOT EXISTS idx_proj_uf    ON projetos(uf)",
-        "CREATE INDEX IF NOT EXISTS idx_proj_nome  ON projetos(nome_projeto)",
-        "CREATE INDEX IF NOT EXISTS idx_emp_score  ON empresas(score_empresa DESC)",
-        "CREATE INDEX IF NOT EXISTS idx_me_proj    ON match_empresas(nome_projeto)",
-        "CREATE INDEX IF NOT EXISTS idx_med_proj   ON match_editais(nome_projeto)",
-        "CREATE INDEX IF NOT EXISTS idx_edit_stat  ON editais(status)",
+        "CREATE INDEX IF NOT EXISTS idx_proj_score    ON projetos(score_prioridade DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_proj_uf       ON projetos(uf)",
+        "CREATE INDEX IF NOT EXISTS idx_proj_nome     ON projetos(nome_projeto)",
+        "CREATE INDEX IF NOT EXISTS idx_emp_score     ON empresas(score_empresa DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_me_proj       ON match_empresas(nome_projeto)",
+        "CREATE INDEX IF NOT EXISTS idx_med_proj      ON match_editais(nome_projeto)",
+        "CREATE INDEX IF NOT EXISTS idx_edit_stat     ON editais(status)",
+        "CREATE INDEX IF NOT EXISTS idx_rouanet_score ON projetos_rouanet(score_prioridade DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_rouanet_uf    ON projetos_rouanet(uf)",
+        "CREATE INDEX IF NOT EXISTS idx_mr_proj       ON match_rouanet(nome_projeto)",
     ]
     for idx in indices:
         try:
