@@ -81,6 +81,7 @@ PORTAIS_NOTICIAS = [
     {'nome': 'Fundacao Roberto Marinho',  'rss': 'https://frm.org.br/feed/',                                                              'area_default': 'Educacao|Cultura|Instituto Empresarial'},
     {'nome': 'Instituto Votorantim',      'rss': 'https://www.institutovotorantim.org.br/feed/',                                          'area_default': 'Desenvolvimento Local|Social|Instituto Empresarial'},
     {'nome': 'Instituto Gerdau',          'rss': 'https://www.institutogerdau.org.br/feed/',                                              'area_default': 'Educacao|Empreendedorismo|Instituto Empresarial'},
+    {'nome': 'Blog Prosas — Editais',     'rss': 'https://blog.prosas.com.br/categoria/editais/feed/',                                    'area_default': 'Terceiro Setor|Cultura|Educação|Social'},
 ]
 
 SCHEMA = [
@@ -476,13 +477,29 @@ def coletar_prosas_api() -> list:
                 'sort':       '',
             }, timeout=15)
             r.raise_for_status()
-            items = r.json().get('data', [])
+            resp_json = r.json()
+            items    = resp_json.get('data', [])
+            included = resp_json.get('included', [])
             if not items:
                 break
             for item in items:
                 a = item.get('attributes', {})
                 encerramento = (a.get('encerramento_das_inscricoes') or '')[:10]
                 dias = _dias_restantes(encerramento)
+
+                # Extrair áreas reais dos relationships → included
+                area_ids = []
+                ai_data = item.get('relationships', {}).get('area_interesses', {}).get('data', [])
+                if isinstance(ai_data, list):
+                    area_ids = [x.get('id') for x in ai_data if isinstance(x, dict)]
+                area_nomes = [
+                    inc.get('attributes', {}).get('nome', '')
+                    for inc in included
+                    if inc.get('type') == 'area_interesse' and inc.get('id') in area_ids
+                    and inc.get('attributes', {}).get('nome')
+                ]
+                areas_str = '|'.join(area_nomes) if area_nomes else 'Terceiro Setor'
+
                 editais.append({
                     'id':                f'prosas-{item["id"]}',
                     'fonte':             'Prosas',
@@ -493,7 +510,7 @@ def coletar_prosas_api() -> list:
                     'data_encerramento': encerramento,
                     'dias_restantes':    dias,
                     'status':            _status(dias),
-                    'areas_tematicas':   'Terceiro Setor|Prosas',
+                    'areas_tematicas':   areas_str,
                     'uf_elegivel':       'Nacional',
                     'url_original':      f'https://prosas.com.br/oportunidades/{item["id"]}',
                     'is_real':           True,
