@@ -38,24 +38,57 @@ AFINIDADE_CULTURAL = {
 ALTA_VISIBILIDADE = {'música','teatro','audiovisual','cinema','dança','literatura'}
 
 
-def _score_geo(uf_proj, uf_emp, reg_emp):
-    reg_proj = REGIOES.get(str(uf_proj).strip().upper(), '')
-    uf_emp = str(uf_emp).strip().upper()
-    if uf_proj == uf_emp:
+def _score_geo(uf_proj: str, uf_emp: str, reg_emp: str, reg_proj: str = '') -> tuple:
+    uf_proj  = str(uf_proj  or '').strip().upper()
+    uf_emp   = str(uf_emp   or '').strip().upper()
+    reg_emp  = str(reg_emp  or '').strip()
+    reg_proj = reg_proj or REGIOES.get(uf_proj, '')
+
+    if uf_proj and uf_emp and uf_proj == uf_emp:
         return 1.0, f'Mesma UF ({uf_proj})'
-    if reg_proj and reg_proj == reg_emp:
-        return 0.6, f'Mesma região ({reg_proj})'
-    return 0.3, 'Atuação nacional'
+
+    if reg_proj and reg_emp and reg_emp not in ('N/D', 'Nacional', 'Outro', ''):
+        if reg_proj == reg_emp:
+            return 0.7, f'Mesma região ({reg_proj})'
+
+    if reg_emp in ('Sudeste',):
+        return 0.45, 'Empresa Sudeste — alcance nacional'
+
+    return 0.30, 'Atuação nacional'
 
 
-def _score_setor(segmento, setor):
+def _score_setor(segmento: str, setor: str, descricao_emp: str = '') -> tuple:
+    import re as _re
     afins = AFINIDADE_CULTURAL.get(setor, [])
-    seg_l = str(segmento).lower() if segmento and str(segmento) != 'nan' else ''
-    if any(a.lower() in seg_l for a in afins):
-        return 0.9, f'Alta afinidade: {setor} × {segmento}'
-    if any(k in seg_l for k in ALTA_VISIBILIDADE):
-        return 0.5, 'Segmento de alta visibilidade'
-    return 0.3, 'Afinidade geral com cultura'
+    seg_lower = str(segmento or '').lower()
+
+    m = _re.search(r'Rouanet:\s*R\$([0-9,.]+)([MBK]?)', str(descricao_emp or ''))
+    val_historico = 0.0
+    if m:
+        val = float(m.group(1).replace(',', '.'))
+        mult = {'M': 1e6, 'B': 1e9, 'K': 1e3}.get(m.group(2), 1)
+        val_historico = val * mult
+
+    if any(a.lower() in seg_lower for a in afins):
+        base = 0.9
+        just = f'Alta afinidade: {setor} × {segmento}'
+    elif any(k in seg_lower for k in ALTA_VISIBILIDADE):
+        base = 0.5
+        just = 'Segmento de alta visibilidade'
+    else:
+        base = 0.3
+        just = 'Afinidade geral com cultura'
+
+    if val_historico >= 10_000_000:
+        bonus = 0.10
+        just += f' + histórico Rouanet R${val_historico/1e6:.0f}M'
+    elif val_historico > 0:
+        bonus = 0.05
+        just += ' + histórico Rouanet'
+    else:
+        bonus = 0.0
+
+    return min(base + bonus, 1.0), just
 
 
 def _score_fin(saldo, potencial):
@@ -80,7 +113,7 @@ def calcular_match(proj, emp):
     potencial = float(emp.get('potencial_investimento', 0) or 0)
 
     s_geo, j_geo = _score_geo(uf_proj, uf_emp, reg_emp)
-    s_set, j_set = _score_setor(segmento, setor)
+    s_set, j_set = _score_setor(segmento, setor, emp.get('descricao', ''))
     s_fin, j_fin = _score_fin(saldo, potencial)
 
     score = round(s_geo * 0.35 + s_set * 0.35 + s_fin * 0.30, 4)

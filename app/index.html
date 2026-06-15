@@ -42,7 +42,7 @@ html, body { height: 100%; background: var(--bg); color: var(--white); font-fami
 .hdr-title { font-size: 15px; font-weight: bold; letter-spacing: 3px; color: var(--amber); text-shadow: 0 0 8px rgba(255,204,0,.4); }
 .hdr-stats { display: flex; gap: 18px; font-size: 11px; color: var(--gray); }
 .hdr-stat span { color: var(--white); font-weight: bold; }
-#ticker-inner { display: inline-block; white-space: nowrap; animation: scroll-left 80s linear infinite; padding: 4px 0; font-size: 11px; color: var(--green3); }
+#ticker-content { display: inline-block; white-space: nowrap; animation: scroll-left 80s linear infinite; padding: 4px 0; font-size: 11px; color: var(--green3); }
 @keyframes scroll-left { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
 .tick-item { display: inline-block; margin-right: 40px; }
 .tick-item .tick-name { color: var(--green); }
@@ -167,7 +167,7 @@ tr.selected td { background: #1a1a2e; border-left: 2px solid var(--amber); }
   </div>
 
   <!-- TICKER -->
-  <div id="ticker"><div id="ticker-inner"></div></div>
+  <div id="ticker"><div id="ticker-content"></div></div>
 
   <!-- MAIN -->
   <div id="main">
@@ -1348,15 +1348,24 @@ function renderEditais() {
 }
 
 // ── TICKER ────────────────────────────────────────────────────────────────
-function renderTicker() {
-  const items = [...ALL_PROJETOS].sort((a,b) => parseFloat(b.saldo_disponivel) - parseFloat(a.saldo_disponivel)).slice(0,30);
-  document.getElementById('ticker-inner').innerHTML = items.map(p =>
-    `<span class="tick-item">
-      <span class="tick-name">${esc(String(p.nome_projeto||'').substring(0,32))}</span> &nbsp;
-      <span class="tick-val">${fmtBRL(p.saldo_disponivel)}</span> &nbsp;
-      <span style="color:var(--green-dim)">${p.uf} · ${esc(LEI_ATIVA==='Rouanet'?p.segmento_cultural:p.modalidade_esportiva)}</span>
-    </span>`).join('');
+async function carregarTicker() {
+  try {
+    const noticias = await apiGet('/api/noticias');
+    const textos = noticias.map(n =>
+      n.link
+        ? `<a href="${n.link}" target="_blank" style="color:var(--amber);text-decoration:none">${esc(n.titulo)}</a>`
+        : `<span style="color:var(--amber)">${esc(n.titulo)}</span>`
+    );
+    const conteudo = [...textos, ...textos].join(
+      '<span style="color:var(--gray);margin:0 24px">◆</span>'
+    );
+    const ticker = document.getElementById('ticker-content');
+    if (ticker) ticker.innerHTML = conteudo;
+  } catch(e) {
+    console.log('Ticker sem dados:', e);
+  }
 }
+function renderTicker() { carregarTicker(); }
 
 // ── BUSCA UNIVERSAL ───────────────────────────────────────────────────────
 function buscaUniversal(termo) {
@@ -1565,6 +1574,8 @@ document.addEventListener('DOMContentLoaded', () => {
   atualizarRelogio();
   setInterval(atualizarRelogio, 1000);
   init();
+  carregarTicker();
+  setInterval(carregarTicker, 600_000);
 });
 </script>
 </body>

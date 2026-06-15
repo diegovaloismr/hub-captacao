@@ -244,10 +244,15 @@ def listar_editais(
             where.append("(titulo LIKE ? OR financiador LIKE ?)"); params += [f"%{busca}%"] * 2
         if area and area != 'todos':
             mapa = {
-                'esporte':  ['esporte','olimp','paralim','sport','atletism','futebol','basquete','volei','natacao','ginastic'],
-                'cultura':  ['cultura','rouanet','arte','music','teatro','cinema','audiovisual'],
-                'educacao': ['educacao','educação','escola','juventude','crianca','adolescente'],
-                'social':   ['social','osc','assistencia','diversidade','inclusao','comunidade'],
+                'esporte':  ['esporte','olimp','paralim','sport','atletism','futebol',
+                             'basquete','volei','natacao','ginastic','modalidade','lie'],
+                'cultura':  ['cultura','rouanet','arte','music','teatro','cinema',
+                             'audiovisual','danca','literatura','patrimoni','funarte',
+                             'minc','salic','paulo gustavo','circo','artesanat'],
+                'educacao': ['educacao','educação','escola','juventude','crianca',
+                             'adolescente','fnde','aprendiz','formacao','capacitac'],
+                'social':   ['social','osc','assistencia','diversidade','inclusao',
+                             'comunidade','mrosc','vulneravel','habitacao','idoso'],
             }
             palavras = mapa.get(area, [])
             if palavras:
@@ -274,6 +279,35 @@ def listar_editais(
         }
     finally:
         conn.close()
+
+# ── NOTÍCIAS (ticker) ──────────────────────────────────────────────────────
+
+@app.get("/api/noticias")
+def ultimas_noticias():
+    """Retorna últimas notícias do Observatório 3º Setor para o ticker."""
+    import feedparser
+    feeds = [
+        'https://observatorio3setor.org.br/category/noticias/editais/feed/',
+        'https://blog.prosas.com.br/categoria/editais/feed/',
+    ]
+    noticias = []
+    for url in feeds:
+        try:
+            feed = feedparser.parse(url)
+            for entry in feed.entries[:5]:
+                titulo = entry.get('title', '').strip()
+                link   = entry.get('link', '')
+                if titulo:
+                    noticias.append({'titulo': titulo, 'link': link})
+        except Exception:
+            pass
+    if not noticias:
+        noticias = [
+            {'titulo': 'Hub de Captação — Terminal de Inteligência v2.0', 'link': ''},
+            {'titulo': 'Projetos LIE + Rouanet disponíveis para matching', 'link': ''},
+        ]
+    return noticias[:15]
+
 
 # ── ADMIN ──────────────────────────────────────────────────────────────────
 

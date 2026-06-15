@@ -82,6 +82,9 @@ PORTAIS_NOTICIAS = [
     {'nome': 'Instituto Votorantim',      'rss': 'https://www.institutovotorantim.org.br/feed/',                                          'area_default': 'Desenvolvimento Local|Social|Instituto Empresarial'},
     {'nome': 'Instituto Gerdau',          'rss': 'https://www.institutogerdau.org.br/feed/',                                              'area_default': 'Educacao|Empreendedorismo|Instituto Empresarial'},
     {'nome': 'Blog Prosas — Editais',     'rss': 'https://blog.prosas.com.br/categoria/editais/feed/',                                    'area_default': 'Terceiro Setor|Cultura|Educação|Social'},
+    {'nome': 'Cultura e Mercado',         'rss': 'https://www.culturaemercado.com.br/feed/',                                               'area_default': 'Cultura|Mercado Cultural|Rouanet|Audiovisual'},
+    {'nome': 'Abranet Cultura',           'rss': 'https://abranetcultura.org.br/feed/',                                                    'area_default': 'Cultura|Digital|Audiovisual|Rouanet'},
+    {'nome': 'MinC Notícias',             'rss': 'https://www.gov.br/cultura/pt-br/assuntos/noticias/RSS',                                 'area_default': 'Cultura|Governo Federal|Rouanet|Lei Paulo Gustavo'},
 ]
 
 SCHEMA = [
@@ -339,14 +342,23 @@ def coletar_portal_transparencia() -> list:
         print('[PT] PORTAL_TRANSPARENCIA_API_KEY nao configurada — pulado.')
         return []
 
-    print('[PT] Coletando convenios do Portal da Transparencia...')
     base    = 'https://api.portaldatransparencia.gov.br/api-de-dados'
     headers = {'chave-api-dados': api_key, 'Accept': 'application/json'}
+    hoje    = datetime.now()
+    dt_ini  = (hoje - timedelta(days=365)).strftime('%d/%m/%Y')
+    dt_fim_param = (hoje + timedelta(days=365)).strftime('%d/%m/%Y')
+
+    print('[PT] Coletando convenios do Portal da Transparencia...')
+    items = []
     try:
         resp = requests.get(
             f'{base}/convenios',
             headers=headers,
-            params={'pagina': 1},
+            params={
+                'dataVigenciaInicial': dt_ini,
+                'dataVigenciaFinal':   dt_fim_param,
+                'pagina':              1,
+            },
             timeout=15,
         )
         resp.raise_for_status()
@@ -354,37 +366,35 @@ def coletar_portal_transparencia() -> list:
         if not isinstance(dados, list):
             dados = dados.get('data', dados.get('convenios', []))
 
-        items = []
-        for c in dados:
-            numero  = str(c.get('numero', ''))
-            objeto  = _clean(str(c.get('objeto', '')))
-            valor   = c.get('valor') or c.get('valorTotal') or ''
-            dt_fim  = str(c.get('dataVigenciaFim') or c.get('dataFim') or '')[:10]
-            conced  = c.get('concedente') or {}
-            conv    = c.get('convenente') or {}
-            financ  = str(conced.get('nome') or 'Governo Federal')
-            uf      = str(conv.get('uf') or '')
-            dias    = _dias_restantes(dt_fim)
+        for item in dados:
+            numero  = str(item.get('numero') or '')
+            objeto  = str(item.get('objeto') or '')[:300]
+            valor   = item.get('valor') or item.get('valorTotal') or ''
+            dt_fim_conv = str(item.get('dataVigenciaFim') or '')[:10]
+            conced  = item.get('concedente') or {}
+            financ  = str(conced.get('nome') if isinstance(conced, dict) else conced or 'Governo Federal')
+            uf_conv = str((item.get('convenente') or {}).get('uf') or '')
+            dias    = _dias_restantes(dt_fim_conv)
             items.append({
-                'id':                f'ptransp-{numero}',
-                'fonte':             'Portal da Transparencia',
-                'titulo':            f'Convenio {numero}',
+                'id':                f'pt-{numero}',
+                'fonte':             'Portal da Transparência',
+                'titulo':            objeto[:200] or f'Convênio {numero}',
                 'descricao':         objeto,
                 'financiador':       financ,
-                'valor_max':         str(valor) if valor else '',
-                'data_encerramento': dt_fim,
+                'valor_max':         str(valor),
+                'data_encerramento': dt_fim_conv,
                 'dias_restantes':    dias,
                 'status':            _status(dias),
-                'areas_tematicas':   'Convenios|Governo Federal',
-                'uf_elegivel':       uf or 'Nacional',
+                'areas_tematicas':   'Convênio|Governo Federal|OSC',
+                'uf_elegivel':       uf_conv or 'Nacional',
                 'url_original':      f'https://portaldatransparencia.gov.br/convenios/{numero}',
                 'is_real':           True,
             })
-        print('    -> ' + str(len(items)) + ' convenios coletados')
-        return items
+        print(f'    -> {len(items)} convenios coletados')
     except Exception as e:
-        print('[AVISO] Portal da Transparencia indisponivel: ' + str(e))
-        return []
+        print(f'    [AVISO] Portal da Transparencia indisponivel: {e}')
+
+    return items
 
 
 def coletar_termos_fomento() -> list:
@@ -450,13 +460,34 @@ def coletar_prosas_api() -> list:
     TOKEN_URL = 'https://prosas.com.br/auth/oauth2/token'
     API_URL   = 'https://prosas.com.br/selecao/api/v2/third_party/oportunidades/inscricoes_abertas'
 
+    browser_headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Origin': 'https://produtos.prosas.com.br',
+        'Referer': 'https://produtos.prosas.com.br/',
+        'Accept': 'application/json, text/plain, */*',
+    }
+
     print('[P] Coletando editais via API Prosas...')
     try:
-        r = requests.post(TOKEN_URL, json={
-            'grant_type': 'client_credentials',
-            'client_id':  CLIENT_ID,
-            'scope':      'public',
-        }, timeout=15)
+        r = requests.post(TOKEN_URL,
+            json={
+                'grant_type': 'client_credentials',
+                'client_id':  CLIENT_ID,
+                'scope':      'public',
+            },
+            headers=browser_headers,
+            timeout=15,
+        )
+        if r.status_code == 403:
+            r = requests.post(TOKEN_URL,
+                data={
+                    'grant_type': 'client_credentials',
+                    'client_id':  CLIENT_ID,
+                    'scope':      'public',
+                },
+                headers={**browser_headers, 'Content-Type': 'application/x-www-form-urlencoded'},
+                timeout=15,
+            )
         r.raise_for_status()
         token = r.json().get('access_token', '')
         if not token:
@@ -464,6 +495,7 @@ def coletar_prosas_api() -> list:
             return []
     except Exception as e:
         print(f'    [AVISO] Falha autenticacao Prosas: {e}')
+        print('    [INFO] Usando RSS blog.prosas.com.br como alternativa.')
         return []
 
     headers = {'Authorization': f'Bearer {token}'}
@@ -601,9 +633,12 @@ def coletar_todos() -> pd.DataFrame:
 
     # ── Resultado ────────────────────────────────────────────────────────────
     print()
-    if not todos:
-        print('[AVISO] Nenhuma oportunidade coletada. Verifique conexao com a internet.')
+    items_reais = [e for e in todos if e.get('is_real', False)]
+    if not items_reais:
+        print('[AVISO] Nenhuma oportunidade real coletada. Verifique conexao com a internet.')
         return pd.DataFrame(columns=SCHEMA)
+    else:
+        print(f'[OK] {len(items_reais)} editais reais coletados — fallback ignorado.')
 
     df = pd.DataFrame(todos)
 
