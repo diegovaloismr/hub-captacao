@@ -20,9 +20,10 @@ REGIOES = {
     'PR':'Sul','RS':'Sul','SC':'Sul',
 }
 
-def coletar_projetos_salic(max_paginas: int = 200) -> list:
+def coletar_projetos_salic(max_paginas: int = 50) -> list:
     projetos = []
     hoje = datetime.now()
+    ano_minimo = hoje.year - 5  # só projetos dos últimos 5 anos
 
     for pagina in range(max_paginas):
         offset = pagina * 100
@@ -43,22 +44,32 @@ def coletar_projetos_salic(max_paginas: int = 200) -> list:
                 val_aprovado = float(item.get('valor_aprovado') or 0)
                 val_captado  = float(item.get('valor_captado') or 0)
                 saldo = val_aprovado - val_captado
-                if saldo <= 0:
+
+                # Filtro 1 — saldo mínimo
+                if saldo < 50_000:
                     continue
 
+                # Filtro 2 — prazo encerrado
                 dt_fim_str = (item.get('data_termino') or '')[:10]
-                try:
-                    dt_fim = datetime.strptime(dt_fim_str, '%Y-%m-%d') if dt_fim_str else None
-                    if dt_fim and dt_fim < hoje:
-                        continue
-                    dias_rest = (dt_fim - hoje).days if dt_fim else 365
-                except Exception:
+                if dt_fim_str:
+                    try:
+                        dt_fim = datetime.strptime(dt_fim_str, '%Y-%m-%d')
+                        if dt_fim < hoje:
+                            continue
+                        dias_rest = (dt_fim - hoje).days
+                    except Exception:
+                        dt_fim_str = ''
+                        dias_rest = 365
+                else:
                     dias_rest = 365
-                    dt_fim_str = ''
+
+                # Filtro 3 — projetos muito antigos (pré-2020)
+                ano_raw = str(item.get('ano_projeto') or '0')
+                ano = int('20' + ano_raw) if len(ano_raw) == 2 else (int(ano_raw) if ano_raw.isdigit() else 0)
+                if ano < ano_minimo:
+                    continue
 
                 uf = (item.get('UF') or '').strip().upper()
-                ano_raw = str(item.get('ano_projeto') or '')
-                ano = int('20' + ano_raw) if len(ano_raw) == 2 else (int(ano_raw) if ano_raw.isdigit() else 2024)
 
                 if dias_rest <= 30:    prazo_s = 1.0
                 elif dias_rest <= 90:  prazo_s = 0.85
@@ -124,7 +135,6 @@ def main():
 
     df = pd.DataFrame(projetos)
     df = df[df['score_prioridade'] >= 0.45]
-    df = df[df['saldo_disponivel'] >= 50_000]
     df = df.sort_values('score_prioridade', ascending=False)
 
     DATA_DIR.mkdir(exist_ok=True)
@@ -136,6 +146,7 @@ def main():
     print(f'  UFs: {df["uf"].nunique()} | Segmentos: {df["segmento_cultural"].nunique()}')
     print(f'  Valor total em captação: R$ {df["saldo_disponivel"].sum()/1e9:.2f}B')
     print(f'{"=" * 54}')
+    print(f'  Filtros: saldo >= R$50k | prazo vigente | ano >= {datetime.now().year - 5}')
     print('Execute em seguida:')
     print('  python3 scripts/matching_rouanet.py')
 
