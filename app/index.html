@@ -317,7 +317,8 @@ tr.selected td { background: #1a1a2e; border-left: 2px solid var(--amber); }
               <th onclick="sortT('emp','setor')">SETOR <span class="si">⇅</span></th>
               <th onclick="sortT('emp','uf_sede')">UF <span class="si">⇅</span></th>
               <th onclick="sortT('emp','regiao_sede')">REGIÃO <span class="si">⇅</span></th>
-              <th onclick="sortT('emp','faturamento_anual')">FATURAMENTO <span class="si">⇅</span></th>
+              <th>LIE HIST. <span style="color:var(--gray2);font-weight:normal;font-size:9px">real</span></th>
+              <th>ROUANET HIST. <span style="color:var(--gray2);font-weight:normal;font-size:9px">real</span></th>
               <th onclick="sortT('emp','potencial_investimento')">POTENCIAL INV. <span class="si">⇅</span></th>
               <th>SITE</th>
             </tr></thead>
@@ -1135,6 +1136,14 @@ function _loadProjDetail(proj, empresas, editais, nameId, cEmpId, cEditId, empBo
 }
 
 // ── EMPRESAS ──────────────────────────────────────────────────────────────
+function extrairHistorico(descricao, tipo) {
+  const regex = tipo === 'LIE'
+    ? /LIE:\s*R\$([0-9,.]+[MBK]?)/i
+    : /Rouanet:\s*R\$([0-9,.]+[MBK]?)/i;
+  const m = String(descricao || '').match(regex);
+  return m ? 'R$ ' + m[1] : '—';
+}
+
 function renderEmpresas() {
   const busca  = (document.getElementById('f-emp-busca').value||'').toLowerCase();
   const setor  = document.getElementById('f-emp-setor').value;
@@ -1157,7 +1166,8 @@ function renderEmpresas() {
       <td style="color:var(--gray);font-size:11px">${esc(e.setor)}</td>
       <td style="color:var(--gray)">${esc(e.uf_sede)}</td>
       <td style="color:var(--gray)">${esc(e.regiao_sede)}</td>
-      <td style="color:var(--white)">${fmtBRL(e.faturamento_anual)}</td>
+      <td style="color:var(--amber);font-size:11px">${extrairHistorico(e.descricao, 'LIE')}</td>
+      <td style="color:var(--amber);font-size:11px">${extrairHistorico(e.descricao, 'Rouanet')}</td>
       <td style="color:var(--amber);font-weight:bold">${fmtBRL(e.potencial_investimento)}</td>
       <td><a href="${esc(e.site)}" target="_blank" style="color:var(--gray2);font-size:10px;text-decoration:none"
              onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color='var(--gray2)'">${esc(site)}</a></td>

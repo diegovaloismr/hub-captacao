@@ -49,13 +49,23 @@ AFINIDADE: dict[str, list[str]] = {
 ALTA_VISIBILIDADE = {'futebol', 'vôlei', 'basquete', 'atletismo', 'natação', 'tênis'}
 
 
-def _score_geo(uf_proj: str, uf_emp: str, reg_emp: str) -> tuple[float, str]:
-    reg_proj = REGIOES.get(uf_proj, '')
-    if uf_proj == uf_emp:
+def _score_geo(uf_proj: str, uf_emp: str, reg_emp: str, reg_proj: str = '') -> tuple:
+    uf_proj  = str(uf_proj  or '').strip().upper()
+    uf_emp   = str(uf_emp   or '').strip().upper()
+    reg_emp  = str(reg_emp  or '').strip()
+    reg_proj = reg_proj or REGIOES.get(uf_proj, '')
+
+    if uf_proj and uf_emp and uf_proj == uf_emp:
         return 1.0, f"Mesma UF ({uf_proj})"
-    if reg_proj and reg_proj == reg_emp:
-        return 0.6, f"Mesma região ({reg_proj})"
-    return 0.3, "Atuação nacional"
+
+    if reg_proj and reg_emp and reg_emp not in ('N/D', 'Nacional', 'Outro', ''):
+        if reg_proj == reg_emp:
+            return 0.7, f"Mesma região ({reg_proj})"
+
+    if reg_emp in ('Sudeste',):
+        return 0.45, "Empresa Sudeste — alcance nacional"
+
+    return 0.30, "Atuação nacional"
 
 
 def _score_setor(modalidade: str, setor: str) -> tuple[float, str]:

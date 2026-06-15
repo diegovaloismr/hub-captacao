@@ -27,7 +27,8 @@ def init_db():
         'match_empresas':   DATA_DIR / 'match_inteligente.csv',
         'match_editais':    DATA_DIR / 'match_editais.csv',
         'projetos_rouanet': DATA_DIR / 'projetos_rouanet.csv',
-        'match_rouanet':    DATA_DIR / 'match_rouanet.csv',
+        'match_rouanet':         DATA_DIR / 'match_rouanet.csv',
+        'match_editais_rouanet': DATA_DIR / 'match_editais_rouanet.csv',
     }
     for tabela, path in csvs.items():
         if path.exists():
@@ -47,6 +48,7 @@ def init_db():
         "CREATE INDEX IF NOT EXISTS idx_rouanet_score ON projetos_rouanet(score_prioridade DESC)",
         "CREATE INDEX IF NOT EXISTS idx_rouanet_uf    ON projetos_rouanet(uf)",
         "CREATE INDEX IF NOT EXISTS idx_mr_proj       ON match_rouanet(nome_projeto)",
+        "CREATE INDEX IF NOT EXISTS idx_mer_proj      ON match_editais_rouanet(nome_projeto)",
     ]
     for idx in indices:
         try:

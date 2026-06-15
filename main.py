@@ -59,6 +59,7 @@ def stats():
                 'valor_total': soma('projetos_rouanet', 'saldo_disponivel'),
                 'n_empresas':  count('empresas'),
                 'n_matches':   count('match_rouanet'),
+                'n_editais':   count('match_editais_rouanet'),
             },
             'educacao': {
                 'n_projetos':  0,
@@ -148,8 +149,9 @@ def listar_projetos(
 
 @app.get("/api/projeto/{nome_projeto:path}")
 def detalhe_projeto(nome_projeto: str, lei: str = Query("LIE")):
-    tabela_proj  = 'projetos_rouanet' if lei == 'Rouanet' else 'projetos'
-    tabela_match = 'match_rouanet'    if lei == 'Rouanet' else 'match_empresas'
+    tabela_proj    = 'projetos_rouanet' if lei == 'Rouanet' else 'projetos'
+    tabela_match   = 'match_rouanet'    if lei == 'Rouanet' else 'match_empresas'
+    tabela_editais = 'match_editais_rouanet' if lei == 'Rouanet' else 'match_editais'
 
     conn = get_conn()
     c = conn.cursor()
@@ -160,7 +162,8 @@ def detalhe_projeto(nome_projeto: str, lei: str = Query("LIE")):
             return JSONResponse({"erro": "Projeto não encontrado"}, status_code=404)
 
         empresas = c.execute(
-            f"""SELECT me.*, e.setor, e.uf_sede, e.descricao, e.potencial_investimento
+            f"""SELECT me.*, e.setor, e.uf_sede, e.descricao, e.potencial_investimento,
+                       e.faturamento_anual, e.lucro_liquido
                FROM {tabela_match} me
                LEFT JOIN empresas e ON e.nome_empresa = me.nome_empresa
                WHERE me.nome_projeto = ?
@@ -168,17 +171,20 @@ def detalhe_projeto(nome_projeto: str, lei: str = Query("LIE")):
             [nome_projeto]
         ).fetchall()
 
-        editais = c.execute(
-            """SELECT * FROM match_editais
-               WHERE nome_projeto = ?
-               ORDER BY score_match DESC LIMIT 15""",
-            [nome_projeto]
-        ).fetchall()
+        c.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{tabela_editais}'")
+        editais = []
+        if c.fetchone():
+            editais = c.execute(
+                f"""SELECT * FROM {tabela_editais}
+                   WHERE nome_projeto = ?
+                   ORDER BY score_match DESC LIMIT 15""",
+                [nome_projeto]
+            ).fetchall()
 
         return {
-            "projeto": dict(proj),
+            "projeto":  dict(proj),
             "empresas": [dict(r) for r in empresas],
-            "editais": [dict(r) for r in editais],
+            "editais":  [dict(r) for r in editais],
         }
     finally:
         conn.close()
@@ -285,7 +291,12 @@ def listar_editais(
 @app.get("/api/noticias")
 def ultimas_noticias():
     """Retorna últimas notícias do Observatório 3º Setor para o ticker."""
-    import feedparser
+    try:
+        import feedparser
+    except (ImportError, ModuleNotFoundError):
+        import sys, os as _os
+        sys.path.insert(0, str(Path(__file__).parent / 'scripts'))
+        import _rss_parser as feedparser
     feeds = [
         'https://observatorio3setor.org.br/category/noticias/editais/feed/',
         'https://blog.prosas.com.br/categoria/editais/feed/',

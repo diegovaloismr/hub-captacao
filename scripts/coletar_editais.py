@@ -18,7 +18,13 @@ import unicodedata
 from datetime import date, datetime, timedelta
 from typing import Optional
 
-import feedparser
+try:
+    import feedparser
+except (ImportError, ModuleNotFoundError):
+    import sys, os as _os
+    sys.path.insert(0, _os.path.dirname(__file__))
+    import _rss_parser as feedparser
+
 import pandas as pd
 import requests
 
@@ -337,64 +343,41 @@ def extrair_edital_com_ia(noticia: dict, api_key: str) -> Optional[dict]:
 # ── Portal da Transparencia: convenios ───────────────────────────────────────
 
 def coletar_portal_transparencia() -> list:
+    """Coleta via RSS do Portal da Transparência (substitui API instável)."""
     api_key = os.environ.get('PORTAL_TRANSPARENCIA_API_KEY', '')
     if not api_key:
-        print('[PT] PORTAL_TRANSPARENCIA_API_KEY nao configurada — pulado.')
+        print('[PT] PORTAL_TRANSPARENCIA_API_KEY nao configurada — pulando.')
         return []
 
-    base    = 'https://api.portaldatransparencia.gov.br/api-de-dados'
-    headers = {'chave-api-dados': api_key, 'Accept': 'application/json'}
-    hoje    = datetime.now()
-    dt_ini  = (hoje - timedelta(days=365)).strftime('%d/%m/%Y')
-    dt_fim_param = (hoje + timedelta(days=365)).strftime('%d/%m/%Y')
-
-    print('[PT] Coletando convenios do Portal da Transparencia...')
-    items = []
+    print('[PT] Buscando transferencias via Portal da Transparencia...')
     try:
-        resp = requests.get(
-            f'{base}/convenios',
-            headers=headers,
-            params={
-                'dataVigenciaInicial': dt_ini,
-                'dataVigenciaFinal':   dt_fim_param,
-                'pagina':              1,
-            },
-            timeout=15,
-        )
-        resp.raise_for_status()
-        dados = resp.json()
-        if not isinstance(dados, list):
-            dados = dados.get('data', dados.get('convenios', []))
-
-        for item in dados:
-            numero  = str(item.get('numero') or '')
-            objeto  = str(item.get('objeto') or '')[:300]
-            valor   = item.get('valor') or item.get('valorTotal') or ''
-            dt_fim_conv = str(item.get('dataVigenciaFim') or '')[:10]
-            conced  = item.get('concedente') or {}
-            financ  = str(conced.get('nome') if isinstance(conced, dict) else conced or 'Governo Federal')
-            uf_conv = str((item.get('convenente') or {}).get('uf') or '')
-            dias    = _dias_restantes(dt_fim_conv)
+        feed = feedparser.parse('https://portaldatransparencia.gov.br/rss/transferencias')
+        items = []
+        for entry in feed.entries[:20]:
+            titulo = entry.get('title', '').strip()
+            link   = entry.get('link', '')
+            if not titulo:
+                continue
             items.append({
-                'id':                f'pt-{numero}',
+                'id':                f'pt-{abs(hash(link))}',
                 'fonte':             'Portal da Transparência',
-                'titulo':            objeto[:200] or f'Convênio {numero}',
-                'descricao':         objeto,
-                'financiador':       financ,
-                'valor_max':         str(valor),
-                'data_encerramento': dt_fim_conv,
-                'dias_restantes':    dias,
-                'status':            _status(dias),
-                'areas_tematicas':   'Convênio|Governo Federal|OSC',
-                'uf_elegivel':       uf_conv or 'Nacional',
-                'url_original':      f'https://portaldatransparencia.gov.br/convenios/{numero}',
+                'titulo':            titulo[:200],
+                'descricao':         titulo,
+                'financiador':       'Governo Federal',
+                'valor_max':         '',
+                'data_encerramento': '',
+                'dias_restantes':    -1,
+                'status':            'ativo',
+                'areas_tematicas':   'Transferência|Governo Federal|OSC|Convênio',
+                'uf_elegivel':       'Nacional',
+                'url_original':      link,
                 'is_real':           True,
             })
-        print(f'    -> {len(items)} convenios coletados')
+        print(f'    -> {len(items)} itens do Portal da Transparência')
+        return items
     except Exception as e:
         print(f'    [AVISO] Portal da Transparencia indisponivel: {e}')
-
-    return items
+        return []
 
 
 def coletar_termos_fomento() -> list:
@@ -625,11 +608,39 @@ def coletar_todos() -> pd.DataFrame:
     items_mrosc = coletar_termos_fomento()
     todos.extend(items_mrosc)
 
-    # ── ETAPA 3: Prosas API — Fonte F (opcional, requer PROSAS_CLIENT_SECRET) ─
+    # ── ETAPA 3: Prosas via RSS (OAuth bloqueado em IPs de servidor) ────────
     print()
-    print('=== ETAPA 3: Prosas API (Fonte F) ===')
-    items_prosas = coletar_prosas_api()
-    todos.extend(items_prosas)
+    print('=== ETAPA 3: Prosas (RSS Blog) ===')
+    try:
+        feed_prosas = feedparser.parse('https://blog.prosas.com.br/categoria/editais/feed/')
+        prosas_items = []
+        for entry in feed_prosas.entries[:30]:
+            titulo = entry.get('title', '').strip()
+            link   = entry.get('link', '')
+            resumo = _clean(entry.get('summary', ''))[:300]
+            cats   = [t.get('term', '') for t in entry.get('tags', [])]
+            areas  = '|'.join(cats) if cats else 'Terceiro Setor|Prosas'
+            if not titulo:
+                continue
+            prosas_items.append({
+                'id':                f'prosas-rss-{abs(hash(link))}',
+                'fonte':             'Prosas',
+                'titulo':            titulo[:200],
+                'descricao':         resumo,
+                'financiador':       'Prosas',
+                'valor_max':         '',
+                'data_encerramento': '',
+                'dias_restantes':    -1,
+                'status':            'ativo',
+                'areas_tematicas':   areas,
+                'uf_elegivel':       'Nacional',
+                'url_original':      link,
+                'is_real':           True,
+            })
+        todos.extend(prosas_items)
+        print(f'    -> {len(prosas_items)} editais do blog Prosas')
+    except Exception as e:
+        print(f'    [AVISO] Prosas RSS indisponivel: {e}')
 
     # ── Resultado ────────────────────────────────────────────────────────────
     print()
