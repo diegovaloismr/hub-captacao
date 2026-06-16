@@ -3,7 +3,7 @@ Vale,Mineração e Siderurgia,RJ,Sudeste,107605445047,10760544505,437147120,1.0,
 Itau,Financeiro,SP,Sudeste,55537710307,5553771031,225621948,0.9848,,LIE: R$220.1M | Rouanet: R$474.1M | Total historico 2022-2025: R$694.2M
 Nubank,Financeiro,SP,Sudeste,39329566756,3932956676,159776365,0.9712,,LIE: R$165.6M | Rouanet: R$326.0M | Total historico 2022-2025: R$491.6M
 Shell,Petróleo e Gás,RJ,Sudeste,30706572947,3070657295,124745453,0.9595,,LIE: R$118.4M | Rouanet: R$265.5M | Total historico 2022-2025: R$383.8M
-Petrobras,Petróleo e Gás,RJ,Sudeste,46098420831,4609842083,187274835,0.9514,,LIE: R$34.4M | Rouanet: R$541.8M | Total historico 2022-2025: R$576.2M
+Petrobras,Energia e Petróleo,RJ,Sudeste,46098420831,4609842083,187274835,0.9514,,LIE: R$34.4M | Rouanet: R$541.8M | Total historico 2022-2025: R$576.2M
 Santander,Financeiro,SP,Sudeste,21551826482,2155182648,87554295,0.9439,,LIE: R$78.9M | Rouanet: R$190.5M | Total historico 2022-2025: R$269.4M
 Bradesco,Financeiro,SP,Sudeste,23225327482,2322532748,94352893,0.9332,,LIE: R$34.4M | Rouanet: R$255.9M | Total historico 2022-2025: R$290.3M
 Banco Do Brasil,Financeiro,CE,Nordeste,18054178714,1805417871,73345101,0.9259,,LIE: R$33.2M | Rouanet: R$192.5M | Total historico 2022-2025: R$225.7M
@@ -13,12 +13,12 @@ Sabesp,Saneamento,SP,Sudeste,10540082013,1054008201,42819083,0.9131,,LIE: R$36.4
 B3,Financeiro,SP,Sudeste,10121609770,1012160977,41119040,0.913,,LIE: R$39.0M | Rouanet: R$87.6M | Total historico 2022-2025: R$126.5M
 Nova Transportadora Do Sudeste,Logística,SP,Sudeste,9004588495,900458850,36581141,0.9087,,LIE: R$36.0M | Rouanet: R$76.6M | Total historico 2022-2025: R$112.6M
 Cbmm,Mineração e Siderurgia,MG,Sudeste,7750992926,775099293,31488409,0.907,,LIE: R$41.8M | Rouanet: R$55.1M | Total historico 2022-2025: R$96.9M
-Btg Pactual,Financeiro,SP,Sudeste,8618725583,861872558,35013573,0.9064,,LIE: R$33.4M | Rouanet: R$74.4M | Total historico 2022-2025: R$107.7M
+Btg Pactual,Financeiro,RJ,Sudeste,8618725583,861872558,35013573,0.9064,,LIE: R$33.4M | Rouanet: R$74.4M | Total historico 2022-2025: R$107.7M
 Porto Seguro,Financeiro,SP,Sudeste,7941075898,794107590,32260621,0.904,,LIE: R$32.9M | Rouanet: R$66.4M | Total historico 2022-2025: R$99.3M
 Vicunha-Csn,Mineração e Siderurgia,SP,Sudeste,8180015430,818001543,33231313,0.903,,LIE: R$29.2M | Rouanet: R$73.1M | Total historico 2022-2025: R$102.3M
 Motiva,Outros,SP,Sudeste,7980909816,798090982,32422446,0.9019,,LIE: R$28.4M | Rouanet: R$71.3M | Total historico 2022-2025: R$99.8M
 Caixa Seguros,Financeiro,DF,Centro-Oeste,7575149398,757514940,30774044,0.8984,,LIE: R$24.7M | Rouanet: R$70.0M | Total historico 2022-2025: R$94.7M
-Cpfl,Energia,SP,Sudeste,7170919983,717091998,29131862,0.8977,,LIE: R$26.0M | Rouanet: R$63.7M | Total historico 2022-2025: R$89.6M
+Cpfl,Financeiro,SP,Sudeste,7170919983,717091998,29131862,0.8977,,LIE: R$26.0M | Rouanet: R$63.7M | Total historico 2022-2025: R$89.6M
 Cemig,Energia,MG,Sudeste,6634712002,663471200,26953518,0.8957,,LIE: R$26.0M | Rouanet: R$56.9M | Total historico 2022-2025: R$82.9M
 Vivo,Telecomunicações,SP,Sudeste,6635402994,663540299,26956325,0.895,,LIE: R$24.9M | Rouanet: R$58.1M | Total historico 2022-2025: R$82.9M
 Mercado Livre,Tecnologia,SP,Sudeste,6323150194,632315019,25687798,0.8942,,LIE: R$25.7M | Rouanet: R$53.3M | Total historico 2022-2025: R$79.0M
@@ -47,16 +47,16 @@ Cateno,Outros,N/D,Nacional,3499762228,349976223,14217784,0.8696,,LIE: R$14.4M | 
 Banco Daycoval,Financeiro,N/D,Nacional,3469281412,346928141,14093956,0.8696,,LIE: R$14.6M | Rouanet: R$28.8M | Total historico 2022-2025: R$43.4M
 Vibra Energia,Energia,RJ,Sudeste,3354730394,335473039,13628592,0.8684,,LIE: R$14.3M | Rouanet: R$27.6M | Total historico 2022-2025: R$41.9M
 Sanepar,Saneamento,PR,Sul,3554470313,355447031,14440036,0.8683,,LIE: R$12.9M | Rouanet: R$31.6M | Total historico 2022-2025: R$44.4M
-Edp,Energia,SP,Sudeste,3451170103,345117010,14020379,0.8678,,LIE: R$13.1M | Rouanet: R$30.0M | Total historico 2022-2025: R$43.1M
+Edp,Financeiro,SP,Sudeste,3451170103,345117010,14020379,0.8678,,LIE: R$13.1M | Rouanet: R$30.0M | Total historico 2022-2025: R$43.1M
 Mrs Logistica,Logística,N/D,Nacional,3394472947,339447295,13790046,0.8674,,LIE: R$13.2M | Rouanet: R$29.3M | Total historico 2022-2025: R$42.4M
 Evora,Outros,N/D,Nacional,3367781891,336778189,13681614,0.8667,,LIE: R$12.7M | Rouanet: R$29.4M | Total historico 2022-2025: R$42.1M
-Weg,Indústria,SC,Sul,3308582347,330858235,13441116,0.8662,,LIE: R$12.7M | Rouanet: R$28.7M | Total historico 2022-2025: R$41.4M
+Weg,Financeiro,SC,Sul,3308582347,330858235,13441116,0.8662,,LIE: R$12.7M | Rouanet: R$28.7M | Total historico 2022-2025: R$41.4M
 Repsol,Petróleo e Gás,N/D,Nacional,3366882720,336688272,13677961,0.8657,,LIE: R$12.0M | Rouanet: R$30.1M | Total historico 2022-2025: R$42.1M
 Safra,Financeiro,SP,Sudeste,3224387341,322438734,13099074,0.8643,,LIE: R$11.8M | Rouanet: R$28.5M | Total historico 2022-2025: R$40.3M
 Edenred,Outros,N/D,Nacional,3098974756,309897476,12589585,0.8641,,LIE: R$12.4M | Rouanet: R$26.3M | Total historico 2022-2025: R$38.7M
 J&F,Outros,N/D,Nacional,3038844438,303884444,12345306,0.8608,,LIE: R$10.4M | Rouanet: R$27.6M | Total historico 2022-2025: R$38.0M
 Grupo Sotreq,Outros,N/D,Nacional,2866378830,286637883,11644664,0.8602,,LIE: R$11.0M | Rouanet: R$24.8M | Total historico 2022-2025: R$35.8M
-Energisa,Energia,RJ,Sudeste,4453222006,445322201,18091214,0.8601,,LIE: R$5.1M | Rouanet: R$50.6M | Total historico 2022-2025: R$55.7M
+Energisa,Energia,CE,Nordeste,4453222006,445322201,18091214,0.8601,,LIE: R$5.1M | Rouanet: R$50.6M | Total historico 2022-2025: R$55.7M
 Ambev,Alimentos e Bebidas,SP,Sudeste,2770505174,277050517,11255177,0.8598,,LIE: R$11.4M | Rouanet: R$23.3M | Total historico 2022-2025: R$34.6M
 Basf,Outros,N/D,Nacional,3531605172,353160517,14347146,0.8597,,LIE: R$7.5M | Rouanet: R$36.7M | Total historico 2022-2025: R$44.1M
 Grupo Sicoob,Financeiro,N/D,Nacional,2903173122,290317312,11794141,0.8597,,LIE: R$10.4M | Rouanet: R$25.9M | Total historico 2022-2025: R$36.3M
@@ -85,13 +85,13 @@ Merril Lynch,Outros,N/D,Nacional,2186400000,218640000,8882250,0.8482,,LIE: R$8.1
 Cmoc Brasil,Outros,N/D,Nacional,2204522976,220452298,8955875,0.8476,,LIE: R$7.7M | Rouanet: R$19.9M | Total historico 2022-2025: R$27.6M
 Neoenergia,Energia,N/D,Nacional,2229239647,222923965,9056286,0.8474,,LIE: R$7.4M | Rouanet: R$20.5M | Total historico 2022-2025: R$27.9M
 Cutrale,Outros,N/D,Nacional,2005389898,200538990,8146896,0.8461,,LIE: R$8.2M | Rouanet: R$16.9M | Total historico 2022-2025: R$25.1M
-Gerdau,Mineração e Siderurgia,RS,Sul,2199058889,219905889,8933677,0.8459,,LIE: R$6.9M | Rouanet: R$20.6M | Total historico 2022-2025: R$27.5M
+Gerdau,Mineração e Siderurgia,SP,Sudeste,2199058889,219905889,8933677,0.8459,,LIE: R$6.9M | Rouanet: R$20.6M | Total historico 2022-2025: R$27.5M
 Bayer,Outros,N/D,Nacional,2150263861,215026386,8735447,0.8456,,LIE: R$7.0M | Rouanet: R$19.9M | Total historico 2022-2025: R$26.9M
 Hdi Seguros,Financeiro,N/D,Nacional,1980320099,198032010,8045050,0.8454,,LIE: R$8.0M | Rouanet: R$16.8M | Total historico 2022-2025: R$24.8M
 Banco Bv,Financeiro,N/D,Nacional,1993130158,199313016,8097091,0.8451,,LIE: R$7.7M | Rouanet: R$17.2M | Total historico 2022-2025: R$24.9M
 Votorantim,Mineração e Siderurgia,N/D,Nacional,2437193362,243719336,9901098,0.844,,LIE: R$5.1M | Rouanet: R$25.4M | Total historico 2022-2025: R$30.5M
 Facebook,Outros,N/D,Nacional,2084583438,208458344,8468620,0.8419,,LIE: R$5.8M | Rouanet: R$20.3M | Total historico 2022-2025: R$26.1M
-Suzano,Papel e Celulose,SP,Sudeste,1746527913,174652791,7095270,0.8419,,LIE: R$7.9M | Rouanet: R$13.9M | Total historico 2022-2025: R$21.8M
+Suzano,Papel e Celulose,BA,Nordeste,1746527913,174652791,7095270,0.8419,,LIE: R$7.9M | Rouanet: R$13.9M | Total historico 2022-2025: R$21.8M
 Edson Queiroz,Outros,N/D,Nacional,1860252699,186025270,7557277,0.8416,,LIE: R$6.9M | Rouanet: R$16.3M | Total historico 2022-2025: R$23.3M
 White Martins,Outros,N/D,Nacional,1841508800,184150880,7481130,0.8414,,LIE: R$6.9M | Rouanet: R$16.1M | Total historico 2022-2025: R$23.0M
 Localiza,Outros,N/D,Nacional,1886524298,188652430,7664005,0.8413,,LIE: R$6.6M | Rouanet: R$17.0M | Total historico 2022-2025: R$23.6M
@@ -112,7 +112,7 @@ J. Mendes,Outros,N/D,Nacional,1663301767,166330177,6757163,0.837,,LIE: R$6.2M | 
 Mattos Filho Advogados,Outros,N/D,Nacional,1642290012,164229001,6671803,0.837,,LIE: R$6.4M | Rouanet: R$14.2M | Total historico 2022-2025: R$20.5M
 Usiminas,Mineração e Siderurgia,N/D,Nacional,1842650378,184265038,7485767,0.8366,,LIE: R$5.1M | Rouanet: R$18.0M | Total historico 2022-2025: R$23.0M
 Totalenergies,Outros,N/D,Nacional,1520808240,152080824,6178283,0.8357,,LIE: R$6.7M | Rouanet: R$12.3M | Total historico 2022-2025: R$19.0M
-Raia Drogasil,Outros,SP,Sudeste,1629879242,162987924,6621384,0.8354,,LIE: R$5.8M | Rouanet: R$14.6M | Total historico 2022-2025: R$20.4M
+Raia Drogasil,Varejo,SP,Sudeste,1629879242,162987924,6621384,0.8354,,LIE: R$5.8M | Rouanet: R$14.6M | Total historico 2022-2025: R$20.4M
 Porto Itapoa,Outros,N/D,Nacional,1534437495,153443749,6233652,0.8349,,LIE: R$6.2M | Rouanet: R$12.9M | Total historico 2022-2025: R$19.2M
 Vallourec,Outros,N/D,Nacional,1540846909,154084691,6259691,0.8346,,LIE: R$6.1M | Rouanet: R$13.2M | Total historico 2022-2025: R$19.3M
 Portonave,Outros,N/D,Nacional,1522163436,152216344,6183789,0.8345,,LIE: R$6.2M | Rouanet: R$12.9M | Total historico 2022-2025: R$19.0M
@@ -183,7 +183,7 @@ Valgroup,Outros,N/D,Nacional,996618641,99661864,4048763,0.8156,,LIE: R$3.7M | Ro
 Pwc,Outros,N/D,Nacional,939510688,93951069,3816762,0.8154,,LIE: R$4.1M | Rouanet: R$7.7M | Total historico 2022-2025: R$11.7M
 Ihara,Outros,N/D,Nacional,966652128,96665213,3927024,0.8153,,LIE: R$3.9M | Rouanet: R$8.2M | Total historico 2022-2025: R$12.1M
 Minerita,Mineração e Siderurgia,N/D,Nacional,1030183978,103018398,4185122,0.8149,,LIE: R$3.4M | Rouanet: R$9.5M | Total historico 2022-2025: R$12.9M
-Mapfre,Outros,SP,Sudeste,958933746,95893375,3895668,0.8149,,LIE: R$3.8M | Rouanet: R$8.2M | Total historico 2022-2025: R$12.0M
+Mapfre,Financeiro,SP,Sudeste,958933746,95893375,3895668,0.8149,,LIE: R$3.8M | Rouanet: R$8.2M | Total historico 2022-2025: R$12.0M
 Supermercados Bh,Outros,N/D,Nacional,968272016,96827202,3933605,0.8148,,LIE: R$3.7M | Rouanet: R$8.4M | Total historico 2022-2025: R$12.1M
 Baterias Moura,Outros,N/D,Nacional,920931020,92093102,3741282,0.8146,,LIE: R$4.0M | Rouanet: R$7.5M | Total historico 2022-2025: R$11.5M
 Comolatti,Outros,N/D,Nacional,919469120,91946912,3735343,0.8143,,LIE: R$3.9M | Rouanet: R$7.5M | Total historico 2022-2025: R$11.5M
@@ -867,7 +867,7 @@ Cerbras Ceramicas,Outros,N/D,Nacional,117722738,11772274,478249,0.7239,,LIE: R$0
 Bwgi,Outros,N/D,Nacional,110664488,11066449,449574,0.7239,,LIE: R$0.4M | Rouanet: R$1.0M | Total historico 2022-2025: R$1.4M
 Riberball,Outros,N/D,Nacional,115295742,11529574,468389,0.7237,,LIE: R$0.4M | Rouanet: R$1.1M | Total historico 2022-2025: R$1.4M
 Ituran,Outros,N/D,Nacional,106800000,10680000,433875,0.7237,,LIE: R$0.4M | Rouanet: R$0.9M | Total historico 2022-2025: R$1.3M
-Wega,Indústria,SC,Sul,80960000,8096000,328900,0.7235,,LIE: R$0.7M | Rouanet: R$0.3M | Total historico 2022-2025: R$1.0M
+Wega,Financeiro,SC,Sul,80960000,8096000,328900,0.7235,,LIE: R$0.7M | Rouanet: R$0.3M | Total historico 2022-2025: R$1.0M
 Oceanica Engenharia,Outros,N/D,Nacional,99040000,9904000,402350,0.7235,,LIE: R$0.5M | Rouanet: R$0.7M | Total historico 2022-2025: R$1.2M
 Morlan,Outros,N/D,Nacional,113520000,11352000,461175,0.7234,,LIE: R$0.4M | Rouanet: R$1.0M | Total historico 2022-2025: R$1.4M
 Messer Gases,Outros,N/D,Nacional,152480000,15248000,619450,0.7234,,LIE: R$0.2M | Rouanet: R$1.7M | Total historico 2022-2025: R$1.9M
@@ -2695,7 +2695,7 @@ Rede Tonin,Outros,N/D,Nacional,8480000,848000,34450,0.6097,,LIE: R$0.0M | Rouane
 Ceb - Companhia Energetica De Brasilia,Outros,N/D,Nacional,167064002,16706400,678698,0.6093,,LIE: R$2.1M | Rouanet: R$0.0M | Total historico 2022-2025: R$2.1M
 Bugio Tratores Ltda.,Outros,N/D,Nacional,8104590,810459,32925,0.6091,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
 Ceraca - Cooperativa De Infra-Estrutura E Desenv. Vale Do Araca,Mineração e Siderurgia,RJ,Sudeste,8466210,846621,34394,0.6089,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
-Naturagua,Outros,SP,Sudeste,8764368,876437,35605,0.6089,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
+Naturagua,Varejo,SP,Sudeste,8764368,876437,35605,0.6089,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
 Dnmv Sistemas Ltda,Outros,N/D,Nacional,8440000,844000,34288,0.6088,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
 Ypetro Distribuidora De Combustiveis S/A,Petróleo e Gás,N/D,Nacional,8643857,864386,35116,0.6087,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
 Rio Verde Industria De Gorduras E Proteinas Ltda,Outros,N/D,Nacional,8400000,840000,34125,0.6087,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
@@ -2969,7 +2969,7 @@ Grings Calcados,Outros,N/D,Nacional,57600000,5760000,234000,0.3579,,LIE: R$0.0M 
 Maclean Power,Outros,N/D,Nacional,57030214,5703021,231685,0.3577,,LIE: R$0.0M | Rouanet: R$0.7M | Total historico 2022-2025: R$0.7M
 Fachin & Hauage,Outros,N/D,Nacional,56845115,5684512,230933,0.3576,,LIE: R$0.0M | Rouanet: R$0.7M | Total historico 2022-2025: R$0.7M
 Saur Equipamentos,Outros,N/D,Nacional,56367530,5636753,228993,0.3574,,LIE: R$0.0M | Rouanet: R$0.7M | Total historico 2022-2025: R$0.7M
-Natura,Outros,SP,Sudeste,56000000,5600000,227500,0.3572,,LIE: R$0.0M | Rouanet: R$0.7M | Total historico 2022-2025: R$0.7M
+Natura,Varejo,SP,Sudeste,56000000,5600000,227500,0.3572,,LIE: R$0.0M | Rouanet: R$0.7M | Total historico 2022-2025: R$0.7M
 Fitch Ratings,Outros,N/D,Nacional,56000000,5600000,227500,0.3572,,LIE: R$0.0M | Rouanet: R$0.7M | Total historico 2022-2025: R$0.7M
 Sap,Tecnologia,N/D,Nacional,56098397,5609840,227900,0.3572,,LIE: R$0.0M | Rouanet: R$0.7M | Total historico 2022-2025: R$0.7M
 Liotecnica,Outros,N/D,Nacional,55920000,5592000,227175,0.3572,,LIE: R$0.0M | Rouanet: R$0.7M | Total historico 2022-2025: R$0.7M
@@ -3731,7 +3731,7 @@ Iacit Solucoes Tecnologicas S.A.,Outros,N/D,Nacional,8000000,800000,32500,0.3056
 Comazi,Outros,N/D,Nacional,8000000,800000,32500,0.3056,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
 Comercio De Cereais Antoniolli Ltda,Outros,N/D,Nacional,8000000,800000,32500,0.3056,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
 Caramuru,Outros,N/D,Nacional,8000000,800000,32500,0.3056,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
-Atena - Tecnologias Em Energia Natural Ltda.,Energia,SP,Sudeste,8000000,800000,32500,0.3056,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
+Atena - Tecnologias Em Energia Natural Ltda.,Varejo,SP,Sudeste,8000000,800000,32500,0.3056,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
 Delfia S/A,Outros,N/D,Nacional,8000000,800000,32500,0.3056,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
 Amazonico 3000,Tecnologia,SP,Sudeste,8000000,800000,32500,0.3056,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
 Cggc Construtora Do Brasil Ltda.,Outros,N/D,Nacional,8000000,800000,32500,0.3056,,LIE: R$0.0M | Rouanet: R$0.1M | Total historico 2022-2025: R$0.1M
