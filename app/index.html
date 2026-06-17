@@ -256,8 +256,10 @@ tr.selected td { background: #1a1a2e; border-left: 2px solid var(--amber); }
 
           <div id="proj-bot">
             <div class="tab-bar">
-              <button class="tab-btn active" id="tb-emp"   onclick="switchTab('emp')">◈ EMPRESAS COMPATÍVEIS <span id="tc-emp"  style="color:var(--green-dim)"></span></button>
-              <button class="tab-btn"        id="tb-edit"  onclick="switchTab('edit')">◈ OPORTUNIDADES COMPATÍVEIS <span id="tc-edit" style="color:var(--green-dim)"></span></button>
+              <button class="tab-btn active" id="tb-emp"       onclick="switchTab('emp')">◈ EMPRESAS COMPATÍVEIS <span id="tc-emp" style="color:var(--green-dim)"></span></button>
+              <button class="tab-btn"        id="tb-edit"      onclick="switchTab('edit')">◈ OPORTUNIDADES COMPATÍVEIS <span id="tc-edit" style="color:var(--green-dim)"></span></button>
+              <button class="tab-btn"        id="tb-emendas"   onclick="switchTab('emendas')">◈ EMENDAS PARLAMENTARES <span id="tc-emendas" style="color:var(--green-dim)"></span></button>
+              <button class="tab-btn"        id="tb-incentivos" onclick="switchTab('incentivos')">◈ INCENTIVOS FISCAIS <span id="tc-incentivos" style="color:var(--green-dim)"></span></button>
             </div>
             <div class="tab-proj-info">
               <span id="match-proj-name" style="color:var(--green)">Clique em um projeto acima para ver empresas e editais compatíveis</span>
@@ -285,6 +287,24 @@ tr.selected td { background: #1a1a2e; border-left: 2px solid var(--amber); }
                     <tr><td colspan="8" style="color:var(--green-dim);text-align:center;padding:10px;">Selecione um projeto acima</td></tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+            <div class="tab-pane" id="pane-emendas">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr>
+                    <th>MATCH</th><th>PARLAMENTAR</th><th>TIPO</th>
+                    <th>UF</th><th>SALDO DISP.</th><th>ÁREAS</th><th>LINK</th>
+                  </tr></thead>
+                  <tbody id="match-emendas-body">
+                    <tr><td colspan="7" style="color:var(--green-dim);text-align:center;padding:10px;">Selecione um projeto acima</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane" id="pane-incentivos">
+              <div id="incentivos-content" style="padding:12px;overflow-y:auto;max-height:340px;">
+                <div style="color:var(--green-dim);text-align:center;padding:16px;">Selecione um projeto acima</div>
               </div>
             </div>
           </div>
@@ -863,9 +883,11 @@ function showView(name) {
   if (nb) nb.classList.add('active');
 }
 function switchTab(tab) {
-  ['emp','edit'].forEach(t => {
-    document.getElementById('tb-' + t).classList.toggle('active', t === tab);
-    document.getElementById('pane-' + t).classList.toggle('active', t === tab);
+  ['emp','edit','emendas','incentivos'].forEach(t => {
+    const btn  = document.getElementById('tb-' + t);
+    const pane = document.getElementById('pane-' + t);
+    if (btn)  btn.classList.toggle('active', t === tab);
+    if (pane) pane.classList.toggle('active', t === tab);
   });
 }
 function switchMatchTab(tab) {
@@ -996,10 +1018,20 @@ async function selectProj(idx) {
   document.getElementById('match-proj-name').textContent = 'Carregando...';
   document.getElementById('tc-emp').textContent  = '';
   document.getElementById('tc-edit').textContent = '';
+  document.getElementById('tc-emendas').textContent = '';
+  document.getElementById('tc-incentivos').textContent = '';
+  const nome = selectedProj.nome_projeto;
+  const uf   = selectedProj.uf || '';
   try {
-    const data = await apiGet('/api/projeto/' + encodeURIComponent(selectedProj.nome_projeto) + '?lei=' + LEI_ATIVA);
+    const [data, dataEmendas, dataIncentivos] = await Promise.all([
+      apiGet('/api/projeto/' + encodeURIComponent(nome) + '?lei=' + LEI_ATIVA),
+      apiGet('/api/emendas-projeto?nome_projeto=' + encodeURIComponent(nome) + '&lei=' + LEI_ATIVA),
+      uf ? apiGet('/api/incentivos/' + uf) : Promise.resolve({incentivos:[]}),
+    ]);
     _loadProjDetail(selectedProj, data.empresas, data.editais,
       'match-proj-name', 'tc-emp', 'tc-edit', 'match-body', 'match-edit-body');
+    renderEmendas(dataEmendas, 'match-emendas-body');
+    renderIncentivos(dataIncentivos);
   } catch(e) {
     document.getElementById('match-proj-name').textContent = 'Erro ao carregar detalhes';
   }
@@ -1133,6 +1165,64 @@ function _loadProjDetail(proj, empresas, editais, nameId, cEmpId, cEditId, empBo
         </tr>`;
       }).join('')
     : '<tr><td colspan="8" style="color:var(--green-dim);text-align:center;padding:10px;">Nenhum edital compatível</td></tr>';
+}
+
+// ── EMENDAS PARLAMENTARES ────────────────────────────────────────────────
+function renderEmendas(data, bodyId) {
+  const emendas = (data && data.emendas) || [];
+  document.getElementById('tc-emendas').textContent = '(' + emendas.length + ')';
+  const tbody = document.getElementById(bodyId || 'match-emendas-body');
+  if (!tbody) return;
+  if (!emendas.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--gray);text-align:center;padding:16px">${data && data.aviso ? data.aviso : 'Nenhuma emenda parlamentar compatível.<br><small style="font-size:10px">Configure PORTAL_TRANSPARENCIA_API_KEY e rode importar_emendas.py</small>'}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = emendas.map(e => {
+    const link = e.url ? `<a href="${esc(e.url)}" target="_blank" style="color:var(--green)">[→]</a>` : '—';
+    return `<tr>
+      <td style="color:var(--green)">${(parseFloat(e.score_match||0)*100).toFixed(0)}%</td>
+      <td style="color:var(--white);font-weight:bold">${esc(e.parlamentar||'—')}</td>
+      <td style="color:var(--gray);font-size:10px">${esc(e.tipo_parlamentar||'—')}</td>
+      <td style="color:var(--amber)">${esc(e.uf_parlamentar||'—')}</td>
+      <td style="color:var(--amber)">R$ ${fmtVal(e.saldo_disponivel)}</td>
+      <td style="color:var(--gray);font-size:10px">${esc((e.areas_interesse||'').replace(/\|/g,', '))}</td>
+      <td>${link}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── INCENTIVOS FISCAIS ────────────────────────────────────────────────────
+function renderIncentivos(data) {
+  const incentivos = (data && data.incentivos) || [];
+  document.getElementById('tc-incentivos').textContent = '(' + incentivos.length + ')';
+  const el = document.getElementById('incentivos-content');
+  if (!el) return;
+  if (!incentivos.length) {
+    el.innerHTML = '<div style="color:var(--gray);text-align:center;padding:16px;">Nenhum incentivo fiscal mapeado para esta UF.</div>';
+    return;
+  }
+  const cores = {'Cultura':'var(--purple)','Esporte':'var(--green)','Social':'var(--amber)','Saúde':'#5eb8ff'};
+  el.innerHTML = incentivos.map(inc => {
+    const cor = cores[inc.tipo] || 'var(--gray)';
+    return `<div style="border-left:3px solid ${cor};padding:10px 14px;margin-bottom:8px;background:var(--bg2)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="color:var(--white);font-weight:bold;font-size:13px">${esc(inc.nome)}</span>
+        <span style="color:${cor};font-size:10px;letter-spacing:1px">${esc(inc.tipo.toUpperCase())} · ${esc(inc.mecanismo)}</span>
+      </div>
+      <div style="color:var(--gray);font-size:11px;margin-top:3px">${esc(inc.nome_completo)}</div>
+      <div style="margin-top:6px;display:flex;gap:16px;font-size:11px;flex-wrap:wrap">
+        <span><span style="color:var(--gray)">Dedução:</span> <span style="color:var(--amber)">${esc(inc.deducao_max_descricao)}</span></span>
+        <span><span style="color:var(--gray)">Público:</span> <span style="color:var(--white)">${esc(inc.publico)}</span></span>
+      </div>
+      ${inc.observacao ? `<div style="color:var(--gray);font-size:10px;margin-top:4px;font-style:italic">${esc(inc.observacao)}</div>` : ''}
+      <div style="margin-top:6px"><a href="${esc(inc.link)}" target="_blank" style="color:var(--green);font-size:11px">↗ Acessar lei</a></div>
+    </div>`;
+  }).join('');
+}
+
+function _getUFProjeto(nome_projeto) {
+  const proj = ALL_PROJETOS.find(p => p.nome_projeto === nome_projeto);
+  return proj ? (proj.uf || '') : '';
 }
 
 // ── EMPRESAS ──────────────────────────────────────────────────────────────

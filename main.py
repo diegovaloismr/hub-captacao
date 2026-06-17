@@ -286,6 +286,48 @@ def listar_editais(
     finally:
         conn.close()
 
+# ── EMENDAS PARLAMENTARES ──────────────────────────────────────────────────
+
+@app.get("/api/emendas-projeto")
+def emendas_projeto(nome_projeto: str = Query(...), lei: str = Query("LIE")):
+    """Retorna emendas parlamentares compatíveis com o projeto."""
+    conn = get_conn()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='match_emendas'")
+        if not c.fetchone():
+            return {"emendas": [], "aviso": "Execute importar_emendas.py e matching_emendas.py"}
+        rows = c.execute(
+            """SELECT * FROM match_emendas
+               WHERE nome_projeto = ? AND lei = ?
+               ORDER BY score_match DESC LIMIT 15""",
+            [nome_projeto, lei]
+        ).fetchall()
+        return {"emendas": [dict(r) for r in rows]}
+    finally:
+        conn.close()
+
+
+# ── INCENTIVOS FISCAIS ─────────────────────────────────────────────────────
+
+import json as json_lib
+
+@app.get("/api/incentivos/{uf}")
+def incentivos_por_uf(uf: str, tipo: str = Query("")):
+    """Retorna leis de incentivo disponíveis para uma UF."""
+    json_path = Path(__file__).parent / 'data' / 'incentivos_fiscais.json'
+    if not json_path.exists():
+        return {"incentivos": [], "uf": uf}
+    with open(json_path, encoding='utf-8') as f:
+        todos = json_lib.load(f)
+    uf = uf.strip().upper()
+    resultado = [i for i in todos if i['uf'] == uf or i['uf'] == 'TODOS']
+    if tipo:
+        resultado = [i for i in resultado if i['tipo'].lower() == tipo.lower()]
+    resultado.sort(key=lambda x: (0 if x['uf'] == uf else 1, x['nome']))
+    return {"incentivos": resultado, "uf": uf}
+
+
 # ── NOTÍCIAS (ticker) ──────────────────────────────────────────────────────
 
 @app.get("/api/noticias")
