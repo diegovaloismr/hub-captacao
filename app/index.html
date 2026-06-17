@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HUB DE CAPTAÇÃO | Terminal de Inteligência</title>
+<title>CAPTAAI | Inteligência em Captação de Recursos</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -155,7 +155,19 @@ tr.selected td { background: #1a1a2e; border-left: 2px solid var(--amber); }
   <!-- HEADER -->
   <div id="header">
     <div class="hdr-top">
-      <div class="hdr-title">HUB CAPTAÇÃO &nbsp;<span style="color:var(--gray);font-size:10px;letter-spacing:1px;font-weight:normal">TERMINAL DE INTELIGÊNCIA v2.0</span></div>
+      <div class="hdr-title" style="display:flex;align-items:center;gap:10px">
+        <!-- Logo CAPTAAI -->
+        <svg width="72" height="28" viewBox="0 0 180 60" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+          <text x="4"   y="46" font-family="monospace" font-size="52" font-weight="bold" fill="#1a6b1a">{</text>
+          <text x="44"  y="46" font-family="monospace" font-size="36" font-weight="bold" fill="#00ff41">_</text>
+          <text x="80"  y="46" font-family="monospace" font-size="40" font-weight="bold" fill="#00ff41">AI</text>
+          <text x="152" y="46" font-family="monospace" font-size="52" font-weight="bold" fill="#1a6b1a">}</text>
+        </svg>
+        <div>
+          <div style="font-size:15px;letter-spacing:2px;color:var(--green);font-weight:bold">CAPTAAI</div>
+          <div style="font-size:9px;letter-spacing:1px;color:var(--gray);font-weight:normal;margin-top:-2px">Inteligência em Captação</div>
+        </div>
+      </div>
       <div class="hdr-stats">
         <div class="hdr-stat"><span style="color:var(--gray)">PROJ</span> <span id="stat-projetos">—</span></div>
         <div class="hdr-stat"><span style="color:var(--gray)">SALDO</span> <span id="stat-saldo" style="color:var(--amber)">—</span></div>
@@ -703,7 +715,7 @@ tr.selected td { background: #1a1a2e; border-left: 2px solid var(--amber); }
   </div>
 
   <div id="statusbar">
-    HUB DE CAPTAÇÃO v2.0 &nbsp;|&nbsp; Lei de Incentivo ao Esporte &nbsp;|&nbsp;
+    CAPTAAI v2.0 &nbsp;|&nbsp; <span id="footer-secao">Lei de Incentivo ao Esporte</span> &nbsp;|&nbsp;
     <span style="color:var(--green)">SISTEMA OPERACIONAL</span> &nbsp;|&nbsp;
     Dados: <span id="stat-data-bot">—</span>
   </div>
@@ -927,6 +939,17 @@ async function setSecao(secao) {
 
   const titulo = document.getElementById('titulo-secao');
   if (titulo) titulo.textContent = cfg.titulo;
+
+  // Rodapé dinâmico
+  const _FOOTER_NOME = {
+    esporte:  'Lei de Incentivo ao Esporte',
+    cultura:  'Lei Rouanet — Cultura',
+    educacao: 'Educação — LIE',
+    social:   'Social — LIE',
+    editais:  'Oportunidades — Editais',
+  };
+  const footerSecao = document.getElementById('footer-secao');
+  if (footerSecao) footerSecao.textContent = _FOOTER_NOME[secao] || 'CAPTAAI';
 
   const modTh = document.getElementById('th-modalidade');
   if (modTh) {
