@@ -296,7 +296,7 @@ tr.selected td { background: #1a1a2e; border-left: 2px solid var(--amber); }
                     <th>MATCH</th><th>PARLAMENTAR</th><th>TIPO</th>
                     <th>UF</th><th>SALDO DISP.</th><th>ÁREAS</th><th>LINK</th>
                   </tr></thead>
-                  <tbody id="match-emendas-body">
+                  <tbody id="emendas-body">
                     <tr><td colspan="7" style="color:var(--green-dim);text-align:center;padding:10px;">Selecione um projeto acima</td></tr>
                   </tbody>
                 </table>
@@ -1023,14 +1023,13 @@ async function selectProj(idx) {
   const nome = selectedProj.nome_projeto;
   const uf   = selectedProj.uf || '';
   try {
-    const [data, dataEmendas, dataIncentivos] = await Promise.all([
+    const [data, dataIncentivos] = await Promise.all([
       apiGet('/api/projeto/' + encodeURIComponent(nome) + '?lei=' + LEI_ATIVA),
-      apiGet('/api/emendas-projeto?nome_projeto=' + encodeURIComponent(nome) + '&lei=' + LEI_ATIVA),
       uf ? apiGet('/api/incentivos/' + uf) : Promise.resolve({incentivos:[]}),
     ]);
     _loadProjDetail(selectedProj, data.empresas, data.editais,
       'match-proj-name', 'tc-emp', 'tc-edit', 'match-body', 'match-edit-body');
-    renderEmendas(dataEmendas, 'match-emendas-body');
+    carregarEmendas(nome);
     renderIncentivos(dataIncentivos);
   } catch(e) {
     document.getElementById('match-proj-name').textContent = 'Erro ao carregar detalhes';
@@ -1168,27 +1167,36 @@ function _loadProjDetail(proj, empresas, editais, nameId, cEmpId, cEditId, empBo
 }
 
 // ── EMENDAS PARLAMENTARES ────────────────────────────────────────────────
-function renderEmendas(data, bodyId) {
-  const emendas = (data && data.emendas) || [];
-  document.getElementById('tc-emendas').textContent = '(' + emendas.length + ')';
-  const tbody = document.getElementById(bodyId || 'match-emendas-body');
-  if (!tbody) return;
-  if (!emendas.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--gray);text-align:center;padding:16px">${data && data.aviso ? data.aviso : 'Nenhuma emenda parlamentar compatível.<br><small style="font-size:10px">Configure PORTAL_TRANSPARENCIA_API_KEY e rode importar_emendas.py</small>'}</td></tr>`;
-    return;
+async function carregarEmendas(nome_projeto) {
+  try {
+    const data = await apiGet(
+      `/api/emendas-projeto?nome_projeto=${encodeURIComponent(nome_projeto)}&lei=${LEI_ATIVA}`
+    );
+    const emendas = data.emendas || [];
+    document.getElementById('tc-emendas').textContent = `(${emendas.length})`;
+
+    if (!emendas.length) {
+      document.getElementById('emendas-body').innerHTML =
+        '<tr><td colspan="7" style="color:var(--gray);text-align:center;padding:16px">Nenhuma emenda compatível</td></tr>';
+      return;
+    }
+
+    document.getElementById('emendas-body').innerHTML = emendas.map(e => `
+      <tr>
+        <td style="color:${parseFloat(e.score_match||0) >= 0.7 ? 'var(--green)' : 'var(--amber)'}">${(parseFloat(e.score_match||0) * 100).toFixed(0)}%</td>
+        <td style="color:var(--white);font-weight:bold">${esc(e.parlamentar || '—')}</td>
+        <td style="color:var(--gray);font-size:10px">${esc((e.tipo_parlamentar || '').substring(0,25))}</td>
+        <td style="color:var(--amber)">${esc(e.uf_parlamentar || '—')}</td>
+        <td style="color:var(--amber)">R$ ${fmtVal(e.saldo_disponivel || 0)}</td>
+        <td style="color:var(--gray);font-size:10px">${esc(e.funcao || '—')}</td>
+        <td>${e.url ? `<a href="${esc(e.url)}" target="_blank" style="color:var(--green)">[→]</a>` : '—'}</td>
+      </tr>
+    `).join('');
+  } catch(err) {
+    console.error('Erro emendas:', err);
+    document.getElementById('emendas-body').innerHTML =
+      `<tr><td colspan="7" style="color:var(--red)">Erro: ${esc(err.message)}</td></tr>`;
   }
-  tbody.innerHTML = emendas.map(e => {
-    const link = e.url ? `<a href="${esc(e.url)}" target="_blank" style="color:var(--green)">[→]</a>` : '—';
-    return `<tr>
-      <td style="color:var(--green)">${(parseFloat(e.score_match||0)*100).toFixed(0)}%</td>
-      <td style="color:var(--white);font-weight:bold">${esc(e.parlamentar||'—')}</td>
-      <td style="color:var(--gray);font-size:10px">${esc(e.tipo_parlamentar||'—')}</td>
-      <td style="color:var(--amber)">${esc(e.uf_parlamentar||'—')}</td>
-      <td style="color:var(--amber)">R$ ${fmtVal(e.saldo_disponivel)}</td>
-      <td style="color:var(--gray);font-size:10px">${esc((e.areas_interesse||'').replace(/\|/g,', '))}</td>
-      <td>${link}</td>
-    </tr>`;
-  }).join('');
 }
 
 // ── INCENTIVOS FISCAIS ────────────────────────────────────────────────────
