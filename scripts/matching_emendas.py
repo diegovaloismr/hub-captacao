@@ -161,7 +161,7 @@ def calcular_matches(df_proj: pd.DataFrame, df_em: pd.DataFrame, lei: str) -> pd
         'tipo_parlamentar':'tipo_parlamentar',
         'uf_parlamentar':  'uf_parlamentar',
         'funcao':          'funcao',
-        'saldo_disponivel_em': 'saldo_emenda',
+        'saldo_disponivel_em': 'saldo_disponivel',
         'valor_empenhado': 'valor_empenhado',
         'ano':             'ano',
         'url':             'url',
