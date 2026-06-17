@@ -1187,7 +1187,7 @@ async function carregarEmendas(nome_projeto) {
         <td style="color:var(--white);font-weight:bold">${esc(e.parlamentar || '—')}</td>
         <td style="color:var(--gray);font-size:10px">${esc((e.tipo_parlamentar || '').substring(0,25))}</td>
         <td style="color:var(--amber)">${esc(e.uf_parlamentar || '—')}</td>
-        <td style="color:var(--amber)">R$ ${fmtVal(e.saldo_disponivel || 0)}</td>
+        <td style="color:var(--amber)">R$ ${fmtBRL(e.saldo_disponivel || 0)}</td>
         <td style="color:var(--gray);font-size:10px">${esc(e.funcao || '—')}</td>
         <td>${e.url ? `<a href="${esc(e.url)}" target="_blank" style="color:var(--green)">[→]</a>` : '—'}</td>
       </tr>
